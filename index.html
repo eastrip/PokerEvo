@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Poker MTT">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#f4f4f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)">
+<title>Poker Progression – Tournois MTT</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f4f2;
+    --surface: #ffffff;
+    --border: #e2e1dc;
+    --text: #0b0b0b;
+    --text-2: #52514e;
+    --muted: #8a8984;
+    --grid: #ecebe7;
+    --accent: #0b0b0b;
+    --winamax: #e30613;     /* rouge vif */
+    --pokerstars: #1d4ed8;  /* bleu royal */
+    --avg: #52514e;
+    --danger: #c4312f;
+    --itm: #0f8a3c;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111110;
+      --surface: #1c1c1b;
+      --border: #2e2e2c;
+      --text: #f0efec;
+      --text-2: #c3c2b7;
+      --muted: #8f8e88;
+      --grid: #2a2a28;
+      --accent: #f0efec;
+      --winamax: #ff2d3a;
+      --pokerstars: #4f7df3;
+      --avg: #c3c2b7;
+      --danger: #ff6b6b;
+      --itm: #22a855;
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.4;
+    overscroll-behavior-y: none;
+  }
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: calc(12px + var(--safe-top)) calc(14px + var(--safe-right)) calc(100px + var(--safe-bottom)) calc(14px + var(--safe-left));
+  }
+  header h1 { font-size: 1.75rem; font-weight: 750; margin: 6px 0 2px; letter-spacing: -0.02em; }
+  header p { margin: 0 0 14px; color: var(--text-2); font-size: .9rem; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .card h2 { font-size: 1.05rem; margin: 0 0 12px; }
+
+  /* Filtres : barre segmentée collante */
+  .filters-bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    margin: 0 calc(-14px - var(--safe-right)) 14px calc(-14px - var(--safe-left));
+    padding: calc(8px + var(--safe-top)) calc(14px + var(--safe-right)) 8px calc(14px + var(--safe-left));
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+  .filters-row { display: flex; gap: 8px; align-items: stretch; }
+  .filters {
+    flex: 1;
+    display: grid; grid-template-columns: 1fr 1fr;
+    background: var(--border); padding: 3px; border-radius: 12px; gap: 3px;
+  }
+  .chip {
+    -webkit-appearance: none; appearance: none;
+    border: 0; background: transparent; color: var(--text-2);
+    min-height: 40px; border-radius: 9px;
+    font: inherit; font-size: .95rem; font-weight: 550;
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    cursor: pointer;
+  }
+  .chip { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.12); transition: opacity .15s; }
+  /* Plateforme exclue par le filtre : barrée et estompée */
+  .chip.off { background: transparent; box-shadow: none; color: var(--muted); text-decoration: line-through; text-decoration-thickness: 2px; }
+  .chip.off .dot { opacity: .35; }
+  .save-btn {
+    -webkit-appearance: none; appearance: none; flex: none;
+    width: 46px; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .save-btn svg { width: 22px; height: 22px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+  .hollow { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--text-2); display: inline-block; }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; }
+  .stat.wide { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; }
+  .stat .label { color: var(--text-2); font-size: .78rem; }
+  .stat .value { font-size: 1.45rem; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .stat .sub { color: var(--muted); font-size: .74rem; min-height: 1em; }
+  .stat.wide .sub { text-align: right; }
+
+  /* Graphique */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: .8rem; color: var(--text-2); margin-bottom: 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend [hidden] { display: none; }
+  .star-lg { color: var(--text-2); font-size: 1rem; line-height: 1; }
+  .dash { width: 22px; height: 0; border-top: 2px dashed var(--avg); display: inline-block; }
+  .chart-box { position: relative; height: 290px; touch-action: pan-y; -webkit-user-select: none; user-select: none; }
+  .zoom-bar { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .zoom-bar[hidden] { display: none; }
+  .zoom-btn {
+    -webkit-appearance: none; appearance: none; flex: none;
+    width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text); font: inherit; font-size: 1.25rem; line-height: 1; cursor: pointer;
+  }
+  .zoom-btn:disabled { opacity: .35; }
+  #z-range {
+    flex: 1; min-height: 0; height: 28px; padding: 0; border: 0; background: transparent;
+    -webkit-appearance: none; appearance: none;
+  }
+  #z-range::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: var(--border); }
+  #z-range::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; margin-top: -9px;
+    width: 24px; height: 24px; border-radius: 50%; background: var(--surface);
+    border: 1px solid var(--border); box-shadow: 0 1px 4px rgba(0,0,0,.25);
+  }
+  #z-range:disabled { opacity: .35; }
+  #z-range:focus { outline: none; }
+  .zoom-info { color: var(--muted); font-size: .76rem; text-align: center; margin-top: 4px; min-height: 1em; }
+  .zoom-info:empty { display: none; }
+  .empty { color: var(--muted); text-align: center; padding: 50px 10px; font-size: .92rem; }
+  .hint { color: var(--muted); font-size: .76rem; margin-top: 6px; }
+
+  /* Barre du bas : « Mes tournois » + « Ajouter » */
+  .bottom-bar {
+    position: fixed; z-index: 20; left: 0; right: 0; bottom: 0;
+    display: grid; grid-template-columns: 1fr 1.35fr; gap: 10px;
+    max-width: 640px; margin: 0 auto;
+    padding: 10px calc(14px + var(--safe-right)) calc(12px + var(--safe-bottom)) calc(14px + var(--safe-left));
+    background: linear-gradient(to top, var(--bg) 70%, transparent);
+  }
+  .bar-btn {
+    -webkit-appearance: none; appearance: none;
+    min-height: 54px; border-radius: 16px; padding: 0 10px;
+    font: inherit; font-size: 1rem; font-weight: 650;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    cursor: pointer; white-space: nowrap;
+    box-shadow: 0 6px 20px rgba(0,0,0,.18);
+  }
+  .bar-btn.primary { background: var(--accent); color: var(--surface); border: 0; }
+  .bar-btn.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+  .bar-btn .plus { font-size: 1.35rem; line-height: 1; font-weight: 500; }
+  .bar-btn .count {
+    min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px;
+    background: var(--border); color: var(--text-2); font-size: .78rem; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .bar-btn .count:empty { display: none; }
+  @media (max-width: 360px) { .bar-btn { font-size: .92rem; } }
+
+  /* Champs */
+  form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .full { grid-column: 1 / -1; }
+  .opt { color: var(--muted); }
+  .item .top, .detail .top { min-width: 0; }
+  .item > div:first-child { min-width: 0; }
+  .t-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  label { display: flex; flex-direction: column; font-size: .8rem; color: var(--text-2); gap: 5px; min-width: 0; }
+  .field-wrap { position: relative; }
+  .field-wrap .suffix { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 1rem; pointer-events: none; }
+  input, select {
+    -webkit-appearance: none; appearance: none;
+    font: inherit;
+    font-size: 16px;               /* évite le zoom automatique d'iOS */
+    min-height: 46px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .field-wrap input { padding-right: 34px; }
+  input[type="date"] { display: block; text-align: left; }
+  input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+  select {
+    background-image: linear-gradient(45deg, transparent 50%, var(--text-2) 50%), linear-gradient(135deg, var(--text-2) 50%, transparent 50%);
+    background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+    background-size: 5px 5px; background-repeat: no-repeat;
+    padding-right: 32px;
+  }
+  input:focus, select:focus { outline: 2px solid var(--pokerstars); outline-offset: 1px; }
+  .btn {
+    -webkit-appearance: none; appearance: none;
+    font: inherit; font-size: 1rem; font-weight: 600;
+    min-height: 48px; padding: 0 18px; border-radius: 12px; cursor: pointer;
+  }
+  .btn.primary { background: var(--accent); color: var(--surface); border: 0; }
+  .btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .btn.danger { background: var(--danger); color: #fff; border: 0; }
+  .btn.ghost-danger { background: transparent; color: var(--danger); border: 0; }
+  .error { color: var(--danger); font-size: .85rem; }
+  .error:empty { display: none; }
+
+  /* Interrupteur ITM façon iOS */
+  .toggle {
+    position: relative; flex-direction: row; align-items: center; justify-content: space-between;
+    min-height: 50px; padding: 4px 12px; border: 1px solid var(--border); border-radius: 10px;
+    background: var(--bg); color: var(--text); font-size: 1rem; cursor: pointer;
+  }
+  .toggle small { display: block; color: var(--muted); font-size: .76rem; }
+  .toggle input { position: absolute; opacity: 0; width: 1px; height: 1px; min-height: 0; }
+  .switch {
+    position: relative; flex: none; width: 51px; height: 31px; border-radius: 31px;
+    background: var(--border); transition: background .2s;
+  }
+  .switch::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%;
+    background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.25); transition: transform .2s;
+  }
+  .toggle input:checked + .switch { background: var(--itm); }
+  .toggle input:checked + .switch::after { transform: translateX(20px); }
+  .toggle input:focus-visible + .switch { outline: 2px solid var(--pokerstars); outline-offset: 2px; }
+  .badge {
+    display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .02em;
+    padding: 2px 7px; border-radius: 6px; background: var(--itm); color: #fff;
+  }
+
+  /* Liste des tournois */
+  .list { list-style: none; margin: 0; padding: 0; }
+  .item {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 2px 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .item:last-child { border-bottom: 0; }
+  .item .top { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+  .item .meta { color: var(--text-2); font-size: .85rem; font-variant-numeric: tabular-nums; }
+  .item .right { text-align: right; font-variant-numeric: tabular-nums; }
+  .item .ratio { font-weight: 700; }
+  .item .gain { font-size: .85rem; font-weight: 600; }
+  .pos { color: var(--itm) !important; }
+  .neg { color: var(--danger) !important; }
+  .item .meta { margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item .row-actions { display: flex; gap: 2px; margin-right: -6px; }
+  .mini-btn {
+    -webkit-appearance: none; appearance: none;
+    width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%;
+    background: transparent; color: var(--muted);
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .mini-btn svg { width: 17px; height: 17px; }
+  .mini-btn:active { background: var(--bg); color: var(--text); }
+  .mini-btn.del:active { color: var(--danger); }
+  .icon-btn {
+    -webkit-appearance: none; appearance: none;
+    flex: 1; min-height: 40px;
+    border: 1px solid var(--border); background: transparent; color: var(--text-2);
+    border-radius: 10px; font: inherit; font-size: .88rem; cursor: pointer;
+  }
+  .icon-btn.del { color: var(--danger); }
+
+  .backup-block { margin-bottom: 18px; }
+  .backup-block .btn { width: 100%; margin-top: 8px; }
+  .backup-block h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 2px 2px; }
+  .backup-block textarea {
+    width: 100%; margin-top: 8px; padding: 10px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text); font: 16px/1.35 ui-monospace, Menlo, monospace; resize: vertical;
+  }
+  .ok-msg { color: var(--itm); font-size: .9rem; font-weight: 600; text-align: center; }
+  .ok-msg:empty { display: none; }
+  .backup-block p { color: var(--text-2); font-size: .85rem; margin: 8px 2px 0; }
+
+  /* Carte détail du tournoi sélectionné */
+  .detail { border-width: 2px; animation: pop .2s ease-out; }
+  @keyframes pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .detail-head { display: flex; justify-content: space-between; align-items: center; }
+  .detail .top { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.05rem; }
+  .close-btn {
+    -webkit-appearance: none; appearance: none; border: 0; background: var(--bg); color: var(--text-2);
+    width: 32px; height: 32px; border-radius: 50%; font-size: .9rem; cursor: pointer;
+  }
+  .d-date { color: var(--text-2); font-size: .88rem; margin: 2px 0 12px; }
+  .d-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .d-grid > div { background: var(--bg); border-radius: 10px; padding: 8px 10px; }
+  .d-grid .label { color: var(--text-2); font-size: .74rem; }
+  .d-grid .v { font-weight: 700; font-size: 1.05rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .d-money { color: var(--text-2); font-size: .85rem; margin-top: 10px; }
+  .d-compare { color: var(--text-2); font-size: .85rem; margin: 6px 0 12px; }
+  .d-compare strong.good { color: var(--itm); }
+  .d-compare strong.bad { color: var(--danger); }
+  .d-actions { display: grid; grid-template-columns: 48px 1fr 48px; gap: 8px; }
+  .icon-btn.nav { font-size: 1.4rem; line-height: 1; }
+  .icon-btn:disabled { opacity: .35; }
+  .tools .btn { font-size: .88rem; min-height: 42px; }
+
+  /* Fenêtre modale (ajout / modification) */
+  body.modal-open { position: fixed; left: 0; right: 0; overflow: hidden; }
+  .modal-backdrop, .sheet-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    display: flex; align-items: flex-end; justify-content: center;
+    animation: fade .2s ease-out;
+  }
+  .modal-backdrop { z-index: 40; }
+  #modal { z-index: 45; }  /* la fiche tournoi passe au-dessus de la liste */
+  .sheet-backdrop { z-index: 50; }
+  .modal-backdrop[hidden], .sheet-backdrop[hidden] { display: none; }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes up { from { transform: translateY(100%); } to { transform: none; } }
+  .modal, .sheet {
+    width: 100%; max-width: 640px;
+    background: var(--surface);
+    border-radius: 18px 18px 0 0;
+    animation: up .25s ease-out;
+    box-shadow: 0 -8px 30px rgba(0,0,0,.2);
+  }
+  #list-modal .modal { min-height: 60dvh; }
+  #backup-modal { z-index: 42; }
+  .modal {
+    max-height: calc(100dvh - var(--safe-top) - 16px);
+    overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+    padding: 8px calc(16px + var(--safe-right)) calc(20px + var(--safe-bottom)) calc(16px + var(--safe-left));
+  }
+  .grabber { width: 38px; height: 5px; border-radius: 3px; background: var(--border); margin: 0 auto 8px; }
+  .modal-head { display: grid; grid-template-columns: 80px 1fr 80px; align-items: center; margin-bottom: 4px; }
+  .modal-head h2 { margin: 0; text-align: center; font-size: 1.05rem; }
+  .modal-head .link:last-child { justify-self: end; }
+  .link {
+    -webkit-appearance: none; appearance: none; border: 0; background: none; padding: 10px 0;
+    font: inherit; font-size: 1rem; color: var(--pokerstars); cursor: pointer; justify-self: start;
+  }
+  .link.strong { font-weight: 700; }
+  .modal-sub { text-align: center; color: var(--muted); font-size: .85rem; margin-bottom: 16px; min-height: 4px; }
+  .preview {
+    text-align: center; font-size: .9rem; color: var(--text-2);
+    background: var(--bg); border-radius: 10px; padding: 10px;
+  }
+  .preview strong { color: var(--text); font-size: 1.1rem; }
+  .sheet {
+    padding: 20px calc(16px + var(--safe-right)) calc(16px + var(--safe-bottom)) calc(16px + var(--safe-left));
+  }
+  .sheet p { margin: 0 0 16px; text-align: center; color: var(--text-2); }
+  .sheet .btn { width: 100%; margin-top: 8px; }
+
+  @media (min-width: 700px) {
+    .modal-backdrop { align-items: center; }
+    .modal { border-radius: 18px; }
+    .stats { grid-template-columns: repeat(4, 1fr); }
+    .chart-box { height: 340px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>♠ Poker Progression</h1>
+    <p>Mes places en tournois MTT, en % du field (place ÷ joueurs).</p>
+  </header>
+
+  <div class="filters-bar">
+    <div class="filters-row">
+      <div class="filters" role="group" aria-label="Filtrer par plateforme">
+        <button class="chip" data-filter="Winamax"><span class="dot" style="background:var(--winamax)"></span>Winamax</button>
+        <button class="chip" data-filter="PokerStars"><span class="dot" style="background:var(--pokerstars)"></span>PokerStars</button>
+      </div>
+      <button class="save-btn" id="save-btn" aria-label="Sauvegarde">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="label">Tournois joués</div><div class="value" id="s-count">0</div><div class="sub" id="s-count-sub"></div></div>
+    <div class="stat"><div class="label">Place moyenne</div><div class="value" id="s-avg">–</div><div class="sub">en % du field</div></div>
+    <div class="stat"><div class="label">Meilleur résultat</div><div class="value" id="s-best">–</div><div class="sub" id="s-best-sub"></div></div>
+    <div class="stat"><div class="label">Taux ITM</div><div class="value" id="s-itm">–</div><div class="sub" id="s-itm-sub"></div></div>
+    <div class="stat wide">
+      <div><div class="label">Bilan (gains − buy-ins)</div><div class="value pos" id="s-gain">0 €</div></div>
+      <div class="sub" id="s-gain-sub"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Progression</h2>
+    <div class="legend">
+      <span id="lg-wina"><span class="dot" style="background:var(--winamax)"></span>Winamax</span>
+      <span id="lg-ps"><span class="dot" style="background:var(--pokerstars)"></span>PokerStars</span>
+      <span><span class="dash"></span>Moyenne</span>
+      <span><span class="dot" style="background:var(--text-2)"></span>ITM</span>
+      <span><span class="hollow"></span>Hors ITM</span>
+      <span><span class="star-lg">★</span>Avec buy-in</span>
+      <span><span class="dot" style="background:var(--text-2)"></span>Freeroll</span>
+    </div>
+    <div class="chart-box">
+      <canvas id="chart" aria-label="Graphique de progression des places en tournoi"></canvas>
+      <div class="empty" id="empty" hidden>Aucun tournoi à afficher.<br>Touche « Ajouter un tournoi » pour commencer.</div>
+    </div>
+    <div class="zoom-bar" id="zoom-bar" hidden>
+      <button type="button" class="zoom-btn" id="z-out" aria-label="Afficher plus de tournois">−</button>
+      <input type="range" id="z-range" min="0" max="0" step="1" aria-label="Faire défiler les tournois">
+      <button type="button" class="zoom-btn" id="z-in" aria-label="Afficher moins de tournois">+</button>
+    </div>
+    <div class="zoom-info" id="z-info"></div>
+    <div class="hint" id="chart-hint">Plus le point est haut, meilleure est la place. Touche un point pour voir le tournoi.</div>
+  </div>
+
+  <!-- Carte du tournoi sélectionné dans le graphique -->
+  <div class="card detail" id="detail" hidden>
+    <div class="detail-head">
+      <div class="top" id="d-top"></div>
+      <button type="button" class="close-btn" id="d-close" aria-label="Fermer">✕</button>
+    </div>
+    <div class="d-date" id="d-date"></div>
+    <div class="d-grid">
+      <div><div class="label">Place</div><div class="v" id="d-place"></div></div>
+      <div><div class="label">Résultat</div><div class="v" id="d-ratio"></div></div>
+      <div><div class="label">Bilan</div><div class="v" id="d-gain"></div></div>
+    </div>
+    <div class="d-money" id="d-money"></div>
+    <div class="d-compare" id="d-compare"></div>
+    <div class="d-actions">
+      <button type="button" class="icon-btn nav" id="d-prev" aria-label="Tournoi précédent">‹</button>
+      <button type="button" class="icon-btn" id="d-edit">Modifier</button>
+      <button type="button" class="icon-btn nav" id="d-next" aria-label="Tournoi suivant">›</button>
+    </div>
+  </div>
+
+
+</div>
+
+<div class="bottom-bar">
+  <button class="bar-btn secondary" id="list-btn">Mes tournois<span class="count" id="list-count"></span></button>
+  <button class="bar-btn primary" id="add-btn"><span class="plus">＋</span>Ajouter un tournoi</button>
+</div>
+
+<!-- Fenêtre modale : sauvegarde -->
+<div class="modal-backdrop" id="backup-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="b-title">
+    <div class="grabber" aria-hidden="true"></div>
+    <div class="modal-head">
+      <span></span>
+      <h2 id="b-title">Sauvegarde</h2>
+      <button type="button" class="link strong" id="b-close">OK</button>
+    </div>
+    <div class="modal-sub" id="b-sub"></div>
+    <div class="backup-block">
+      <h3>Exporter</h3>
+      <button class="btn primary" id="export">Enregistrer un fichier</button>
+      <button class="btn secondary" id="copy-data">Copier les données</button>
+      <p>Le fichier s'ouvre dans le menu de partage : choisis « Enregistrer dans Fichiers », Mail ou AirDrop. « Copier » met toutes tes données dans le presse-papiers, à coller dans Notes par exemple.</p>
+    </div>
+    <div class="backup-block">
+      <h3>Importer</h3>
+      <button class="btn secondary" id="import">Importer un fichier</button>
+      <input type="file" id="import-file" accept="application/json,.json,text/plain,.txt" hidden>
+      <button class="btn secondary" id="paste-toggle">Coller des données</button>
+      <div id="paste-zone" hidden>
+        <textarea id="paste-text" rows="5" placeholder="Colle ici le texte de ta sauvegarde…" spellcheck="false" autocapitalize="off" autocorrect="off"></textarea>
+        <button class="btn primary" id="paste-import">Importer ce texte</button>
+      </div>
+      <p>L'import remplace les tournois actuels.</p>
+    </div>
+    <div id="export-zone" class="backup-block" hidden>
+      <h3>Tes données</h3>
+      <textarea id="export-text" rows="6" readonly></textarea>
+      <p>Sélectionne tout ce texte et copie-le, puis garde-le dans Notes ou envoie-le-toi par mail.</p>
+    </div>
+    <div class="error" id="import-error"></div>
+    <div class="ok-msg" id="b-status"></div>
+  </div>
+</div>
+
+<!-- Fenêtre modale : mes tournois -->
+<div class="modal-backdrop" id="list-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="l-title">
+    <div class="grabber" aria-hidden="true"></div>
+    <div class="modal-head">
+      <span></span>
+      <h2 id="l-title">Mes tournois</h2>
+      <button type="button" class="link strong" id="l-close">OK</button>
+    </div>
+    <div class="modal-sub" id="l-sub"></div>
+    <ul class="list" id="list"></ul>
+    <div class="empty" id="list-empty" hidden>Aucun tournoi enregistré.</div>
+  </div>
+</div>
+
+<!-- Fenêtre modale : ajout et modification -->
+<div class="modal-backdrop" id="modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
+    <div class="grabber" aria-hidden="true"></div>
+    <div class="modal-head">
+      <button type="button" class="link" id="m-close">Annuler</button>
+      <h2 id="m-title">Nouveau tournoi</h2>
+      <button type="submit" form="m-form" class="link strong" id="m-ok">Ajouter</button>
+    </div>
+    <div class="modal-sub" id="m-sub"></div>
+    <form id="m-form" novalidate autocomplete="off">
+      <label class="full">Nom du tournoi <span class="opt">(facultatif)</span>
+        <input type="text" id="m-name" maxlength="60" placeholder="ex. Sunday Million, Freeroll…" autocapitalize="sentences" enterkeyhint="next">
+      </label>
+      <label>Date
+        <input type="date" id="m-date" required>
+      </label>
+      <label>Plateforme
+        <select id="m-platform" required>
+          <option value="Winamax">Winamax</option>
+          <option value="PokerStars">PokerStars</option>
+        </select>
+      </label>
+      <label>Joueurs au total
+        <input type="number" id="m-players" min="2" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="5418" required>
+      </label>
+      <label>Ma place finale
+        <input type="number" id="m-place" min="1" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="87" required>
+      </label>
+      <label class="toggle full" for="m-itm">
+        <span>Classé ITM<small>Dans les places payées</small></span>
+        <input type="checkbox" id="m-itm" role="switch">
+        <span class="switch" aria-hidden="true"></span>
+      </label>
+      <label>Buy-in
+        <span class="field-wrap">
+          <input type="text" id="m-buyin" inputmode="decimal" placeholder="0,00">
+          <span class="suffix">€</span>
+        </span>
+      </label>
+      <label>Gain réalisé
+        <span class="field-wrap">
+          <input type="text" id="m-gain" inputmode="decimal" placeholder="0,00">
+          <span class="suffix">€</span>
+        </span>
+      </label>
+      <div class="preview full" id="m-preview"></div>
+      <div class="error full" id="m-error"></div>
+      <button type="submit" class="btn primary full" id="m-submit">Ajouter le tournoi</button>
+      <button type="button" class="btn ghost-danger full" id="m-delete" hidden>Supprimer ce tournoi</button>
+    </form>
+  </div>
+</div>
+
+<!-- Confirmation -->
+<div class="sheet-backdrop" id="sheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true">
+    <p id="sheet-text"></p>
+    <button class="btn danger" id="sheet-ok">Supprimer</button>
+    <button class="btn secondary" id="sheet-cancel">Annuler</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ---------- Stockage local ----------
+  const DATA_KEY = 'pokerProgression.tournaments';
+  const UI_KEY = 'pokerProgression.ui';
+
+  function read(key, fallback) {
+    try { const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }
+    catch (e) { return fallback; }
+  }
+  function write(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+  }
+
+  let tournaments = read(DATA_KEY, []);
+  // État de l'interface : filtre, modale ouverte (et sa saisie en cours), position de défilement
+  const ui = Object.assign({ filter: 'all', modal: null, listOpen: false, backupOpen: false, lastExport: null, selectedId: null, view: { count: null, end: null }, scrollY: 0 }, read(UI_KEY, {}));
+  // Reprise des anciennes versions de la page
+  if (!ui.modal && ui.editingId) ui.modal = { mode: 'edit', id: ui.editingId, values: ui.editDraft || null };
+  delete ui.editingId; delete ui.editDraft; delete ui.draft;
+  if (ui.modal && ui.modal.mode === 'edit' && !tournaments.some(t => t.id === ui.modal.id)) ui.modal = null;
+
+  const saveData = () => write(DATA_KEY, tournaments);
+  const saveUI = () => write(UI_KEY, ui);
+
+  let chart = null;
+  let sheetAction = null;
+  let lockedScroll = null;
+
+  // ---------- Utilitaires ----------
+  const $ = (id) => document.getElementById(id);
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const ratio = (t) => (t.place / t.players) * 100;
+  const gainOf = (t) => +t.gain || 0;
+  const buyinOf = (t) => +t.buyin || 0;
+  const netOf = (t) => Math.round((gainOf(t) - buyinOf(t)) * 100) / 100;
+  const signCls = (n) => n < 0 ? 'neg' : 'pos';
+  const fmtNet = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + fmtEur(Math.abs(n));
+  const fmtPct = (v) => (v < 1 ? v.toFixed(2) : v < 10 ? v.toFixed(1) : v.toFixed(0)).replace('.', ',') + ' %';
+  const fmtDate = (d) => new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const fmtShort = (d) => new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', '');
+  const fmtInt = (n) => n.toLocaleString('fr-FR');
+  const esc = (str) => String(str || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // Titre : le nom du tournoi s'il existe, sinon la plateforme
+  const titleHtml = (t) => `<span class="dot" style="background:${color(t.platform)}"></span><span class="t-name">${esc(t.name || t.platform)}</span>${t.itm ? ' <span class="badge">ITM</span>' : ''}`;
+  const fmtEur = (n) => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
+  const parseGain = (s) => {
+    const v = String(s || '').replace(/\s|€/g, '').replace(',', '.');
+    if (v === '') return 0;
+    const n = Number(v);
+    return isFinite(n) ? Math.round(n * 100) / 100 : NaN;
+  };
+  const color = (p) => p === 'Winamax' ? css('--winamax') : css('--pokerstars');
+  const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+  const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+  function visible() {
+    return tournaments
+      .filter(t => ui.filter === 'all' || t.platform === ui.filter)
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date) || a.created - b.created);
+  }
+
+  // ---------- Rendu ----------
+  function render() {
+    const list = visible();
+    document.querySelectorAll('.chip').forEach(b => {
+      const off = ui.filter !== 'all' && b.dataset.filter !== ui.filter;
+      b.classList.toggle('off', off);
+      b.setAttribute('aria-pressed', String(!off));
+    });
+    $('lg-wina').hidden = ui.filter === 'PokerStars';
+    $('lg-ps').hidden = ui.filter === 'Winamax';
+    renderStats(list);
+    renderChart(list);
+    renderList(list);
+    renderDetail(list);
+    $('list-count').textContent = list.length || '';
+    $('l-sub').textContent = ui.filter === 'all' ? 'Toutes les plateformes' : ui.filter;
+  }
+
+  function renderStats(list) {
+    $('s-count').textContent = list.length;
+    const w = list.filter(t => t.platform === 'Winamax').length;
+    $('s-count-sub').textContent = ui.filter === 'all' && list.length ? `${w} Winamax · ${list.length - w} Stars` : '';
+    const gains = list.reduce((s, t) => s + gainOf(t), 0);
+    const buyins = list.reduce((s, t) => s + buyinOf(t), 0);
+    const net = Math.round((gains - buyins) * 100) / 100;
+    $('s-gain').textContent = fmtNet(net);
+    $('s-gain').className = 'value ' + signCls(net);
+    const roi = buyins > 0 ? Math.round(net / buyins * 100) : null;
+    $('s-gain-sub').innerHTML = list.length
+      ? `Gains <strong class="pos">${fmtEur(gains)}</strong> · Buy-ins ${fmtEur(buyins)}` +
+        (roi !== null ? `<br>ROI <strong class="${signCls(roi)}">${roi > 0 ? '+' : ''}${roi} %</strong>` : '')
+      : ''
+    if (!list.length) {
+      ['s-avg', 's-best', 's-itm'].forEach(id => $(id).textContent = '–');
+      ['s-best-sub', 's-itm-sub'].forEach(id => $(id).textContent = '');
+      return;
+    }
+    const avg = list.reduce((s, t) => s + ratio(t), 0) / list.length;
+    $('s-avg').textContent = 'Top ' + fmtPct(avg);
+    const best = list.reduce((b, t) => ratio(t) < ratio(b) ? t : b);
+    $('s-best').textContent = 'Top ' + fmtPct(ratio(best));
+    $('s-best-sub').textContent = `${fmtInt(best.place)}/${fmtInt(best.players)} · ${best.platform}`;
+    const itm = list.filter(t => t.itm).length;
+    $('s-itm').textContent = Math.round(itm / list.length * 100) + ' %';
+    $('s-itm-sub').textContent = `${itm} sur ${list.length} tournoi${list.length > 1 ? 's' : ''}`;
+  }
+
+  function renderChart(list, quick) {
+    lastChartList = list;
+    const canvas = $('chart');
+    $('empty').hidden = list.length > 0;
+    canvas.style.display = list.length ? 'block' : 'none';
+    if (!window.Chart || !list.length) { $('zoom-bar').hidden = true; $('z-info').textContent = ''; }
+    if (!window.Chart) {
+      if (list.length) { $('empty').hidden = false; $('empty').textContent = 'Le graphique nécessite une connexion internet.'; }
+      return;
+    }
+    if (!list.length) { if (chart) { chart.destroy(); chart = null; } return; }
+
+    const allValues = list.map(ratio);
+    const avg = allValues.reduce((a, b) => a + b, 0) / allValues.length;
+
+    // Fenêtre visible (zoom / défilement horizontal)
+    const w = computeWindow(list);
+    const full = list;
+    list = list.slice(w.start, w.end + 1);
+    const values = allValues.slice(w.start, w.end + 1);
+    updateZoomBar(w, full.length);
+    const small = list.length > 40;
+    const surface = css('--surface');
+    const maxY = Math.min(100, Math.ceil(Math.max(...allValues, avg) * 1.15 / 5) * 5 || 5);
+    const lineColor = ui.filter === 'all' ? css('--muted') : color(ui.filter);
+
+    const data = {
+      labels: list.map(t => fmtShort(t.date)),
+      datasets: [
+        {
+          label: 'Place (% du field)',
+          data: values,
+          borderColor: lineColor,
+          borderWidth: 1.25,
+          tension: 0.25,
+          // ITM = point plein, hors ITM = point creux
+          pointBackgroundColor: list.map(t => t.itm ? color(t.platform) : surface),
+          pointBorderColor: list.map(t => t.itm ? surface : color(t.platform)),
+          pointBorderWidth: list.map(t => t.itm ? 1.5 : 1.75),
+          // Tournoi payant (buy-in > 0) = étoile, freeroll = rond
+          pointStyle: list.map(t => buyinOf(t) > 0
+            ? starImage(color(t.platform), t.itm, surface, t.id === ui.selectedId ? 10 : (small ? 4.5 : 6.5))
+            : 'circle'),
+          pointRadius: list.map(t => t.id === ui.selectedId ? 6.5 : (small ? 2.25 : 3.5)),
+          pointHoverRadius: list.map(t => t.id === ui.selectedId ? 6.5 : (small ? 2.25 : 3.5)),
+          pointHitRadius: 22
+        },
+        {
+          label: 'Place moyenne',
+          data: values.map(() => avg),
+          borderColor: css('--avg'),
+          borderWidth: 1.25,
+          borderDash: [5, 4],
+          pointRadius: 0,
+          pointHitRadius: 0
+        }
+      ]
+    };
+
+    const options = {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: quick ? false : { duration: 250 },
+      interaction: { mode: 'nearest', axis: 'x', intersect: false },
+      events: ['click'],
+      layout: { padding: { right: 6 } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false }
+      },
+      onClick: (evt, _els, ch) => {
+        if (Date.now() < ignoreClickUntil) return; // fin d'un glissement ou d'un pincement
+        // Touche sur un point : on l'affiche. Touche dans une zone vide : on ferme la carte.
+        const hit = ch.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false)
+          .find(el => el.datasetIndex === 0);
+        if (!hit) { if (ui.selectedId) select(null); return; }
+        select(list[hit.index].id, true);
+      },
+      scales: {
+        y: {
+          reverse: true,
+          min: 0,
+          max: maxY,
+          grid: { color: css('--grid') },
+          border: { display: false },
+          ticks: { color: css('--text-2'), font: { size: 11 }, maxTicksLimit: 6, callback: v => v + ' %' }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: css('--text-2'), font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 5 }
+        }
+      }
+    };
+
+    if (chart) {
+      chart.data = data;
+      chart.options = options;
+      chart.update(quick ? 'none' : undefined);
+    } else {
+      chart = new Chart(canvas, { type: 'line', data, options });
+    }
+  }
+
+  // ---------- Étoiles pour les tournois payants ----------
+  // Dessinées en haute résolution puis affichées à la taille voulue pour rester nettes sur iPhone.
+  const starCache = {};
+  function starImage(fill, filled, surface, r) {
+    const key = [fill, filled, surface, r].join('|');
+    if (starCache[key]) return starCache[key];
+    const dpr = Math.max(2, window.devicePixelRatio || 1);
+    const size = Math.ceil((r * 2 + 4) * dpr);
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const ctx = c.getContext('2d');
+    const cx = size / 2, cy = size / 2 + 0.6 * dpr, outer = r * dpr, inner = outer * 0.48;
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const rad = i % 2 ? inner : outer;
+      const a = -Math.PI / 2 + i * Math.PI / 5;
+      ctx.lineTo(cx + rad * Math.cos(a), cy + rad * Math.sin(a));
+    }
+    ctx.closePath();
+    ctx.lineJoin = 'round';
+    if (filled) {                       // ITM : étoile pleine avec liseré clair
+      ctx.lineWidth = 1.5 * dpr; ctx.strokeStyle = surface; ctx.stroke();
+      ctx.fillStyle = fill; ctx.fill();
+    } else {                            // hors ITM : étoile creuse
+      ctx.fillStyle = surface; ctx.fill();
+      ctx.lineWidth = 1.5 * dpr; ctx.strokeStyle = fill; ctx.stroke();
+    }
+    const img = new Image(size / dpr, size / dpr);
+    img.onload = () => { if (chart) chart.draw(); };
+    img.src = c.toDataURL();
+    starCache[key] = img;
+    return img;
+  }
+
+  // ---------- Zoom et défilement du graphique ----------
+  const MIN_VISIBLE = 5;
+  let ignoreClickUntil = 0;
+  let lastChartList = [];
+
+  function computeWindow(list) {
+    const total = list.length;
+    const minC = Math.min(MIN_VISIBLE, total);
+    let count = ui.view.count == null ? total : Math.max(minC, Math.min(total, ui.view.count));
+    let end = ui.view.end == null ? total - 1 : Math.max(count - 1, Math.min(total - 1, ui.view.end));
+    return { start: end - count + 1, end, count, total };
+  }
+  function updateZoomBar(w) {
+    const show = w.total > MIN_VISIBLE;
+    $('zoom-bar').hidden = !show;
+    const r = $('z-range');
+    r.min = w.count - 1; r.max = w.total - 1; r.value = w.end;
+    r.disabled = w.count >= w.total;
+    $('z-out').disabled = w.count >= w.total;
+    $('z-in').disabled = w.count <= MIN_VISIBLE;
+    $('z-info').textContent = !show ? '' : w.count >= w.total
+      ? `${w.total} tournois affichés · pince ou touche + pour zoomer`
+      : `Tournois ${w.start + 1} à ${w.end + 1} sur ${w.total} · glisse pour défiler`;
+  }
+  // Applique une nouvelle fenêtre ; end = null signifie « collé aux derniers tournois »
+  function setView(count, end, quick) {
+    const total = lastChartList.length;
+    if (!total) return;
+    count = Math.max(Math.min(MIN_VISIBLE, total), Math.min(total, Math.round(count)));
+    end = Math.max(count - 1, Math.min(total - 1, Math.round(end)));
+    ui.view = { count: count >= total ? null : count, end: end >= total - 1 ? null : end };
+    saveUI();
+    renderChart(lastChartList, quick);
+  }
+  function currentWindow() { return computeWindow(lastChartList); }
+
+  $('z-in').addEventListener('click', () => { const w = currentWindow(); const c = Math.max(MIN_VISIBLE, Math.round(w.count / 1.6)); setView(c, w.end - Math.round((w.count - c) / 2)); });
+  $('z-out').addEventListener('click', () => { const w = currentWindow(); const c = Math.round(w.count * 1.6); setView(c, w.end + Math.round((c - w.count) / 2)); });
+  $('z-range').addEventListener('input', e => { const w = currentWindow(); setView(w.count, +e.target.value, true); });
+
+  // Gestes : glisser à un doigt = défiler, pincer à deux doigts = zoomer
+  (function () {
+    const box = document.querySelector('.chart-box');
+    let g = null;
+    const area = () => (chart && chart.chartArea) ? chart.chartArea.right - chart.chartArea.left : box.clientWidth;
+    const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    box.addEventListener('touchstart', e => {
+      const w = currentWindow();
+      if (e.touches.length === 1) {
+        g = { mode: 'pan', x: e.touches[0].clientX, y: e.touches[0].clientY, w, moved: false };
+      } else if (e.touches.length === 2) {
+        const rect = box.getBoundingClientRect();
+        const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+        g = { mode: 'pinch', d: dist(e.touches), w, frac: Math.max(0, Math.min(1, cx / rect.width)), moved: true };
+        e.preventDefault();
+      }
+    }, { passive: false });
+    box.addEventListener('touchmove', e => {
+      if (!g) return;
+      if (g.mode === 'pan' && e.touches.length === 1) {
+        const dx = e.touches[0].clientX - g.x, dy = e.touches[0].clientY - g.y;
+        if (!g.moved && (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy))) return; // laisse défiler la page
+        g.moved = true;
+        e.preventDefault();
+        if (g.w.count >= g.w.total) return;
+        const step = area() / Math.max(1, g.w.count - 1);
+        setView(g.w.count, g.w.end - dx / step, true);
+      } else if (g.mode === 'pinch' && e.touches.length === 2) {
+        e.preventDefault();
+        const c = g.w.count * g.d / Math.max(1, dist(e.touches));
+        const anchor = g.w.start + g.frac * (g.w.count - 1);       // tournoi sous les doigts
+        const start = anchor - g.frac * (c - 1);
+        setView(c, start + c - 1, true);
+      }
+    }, { passive: false });
+    const end = () => { if (g && g.moved) ignoreClickUntil = Date.now() + 350; g = null; };
+    box.addEventListener('touchend', end);
+    box.addEventListener('touchcancel', end);
+    // Molette / trackpad sur ordinateur
+    box.addEventListener('wheel', e => {
+      const w = currentWindow();
+      if (e.ctrlKey || Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        if (!e.ctrlKey && !e.shiftKey) return;
+        e.preventDefault();
+        const c = w.count * (e.deltaY > 0 ? 1.15 : 1 / 1.15);
+        setView(c, w.end + (c - w.count) / 2, true);
+      } else {
+        e.preventDefault();
+        setView(w.count, w.end + e.deltaX / 20, true);
+      }
+    }, { passive: false });
+  })();
+
+  function renderList(list) {
+    const ul = $('list');
+    ul.innerHTML = '';
+    const rows = list.slice().reverse(); // plus récent en haut
+    $('list-empty').hidden = rows.length > 0;
+    rows.forEach(t => {
+      const n = netOf(t);
+      const li = document.createElement('li');
+      li.className = 'item';
+      li.innerHTML = `
+        <div>
+          <div class="top">${titleHtml(t)}</div>
+          <div class="meta">${t.name ? t.platform + ' · ' : ''}${fmtDate(t.date)}</div>
+          <div class="meta">${fmtInt(t.place)} / ${fmtInt(t.players)}${buyinOf(t) ? ' · BI ' + fmtEur(buyinOf(t)) : ''}</div>
+        </div>
+        <div class="right">
+          <div class="ratio">Top ${fmtPct(ratio(t))}</div>
+          <div class="gain ${signCls(n)}">${fmtNet(n)}</div>
+        </div>
+        <div class="row-actions">
+          <button class="mini-btn" data-edit="${t.id}" aria-label="Modifier">${ICON_EDIT}</button>
+          <button class="mini-btn del" data-del="${t.id}" aria-label="Supprimer">${ICON_DEL}</button>
+        </div>`;
+      ul.appendChild(li);
+    });
+  }
+
+  const ICON_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+  const ICON_DEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+
+  // ---------- Carte du tournoi sélectionné ----------
+  function select(id, scroll) {
+    ui.selectedId = id;
+    // Fait défiler le graphique si le tournoi choisi est hors de la zone affichée
+    const all = visible(), i = all.findIndex(t => t.id === id);
+    if (i >= 0) {
+      const w = computeWindow(all);
+      if (i < w.start || i > w.end) {
+        const end = Math.max(w.count - 1, Math.min(all.length - 1, i + Math.floor(w.count / 2)));
+        ui.view = { count: ui.view.count, end: end >= all.length - 1 ? null : end };
+      }
+    }
+    saveUI();
+    render();
+    if (scroll && id) {
+      const card = $('detail');
+      const r = card.getBoundingClientRect();
+      const barH = document.querySelector('.bottom-bar').offsetHeight;
+      if (r.bottom > window.innerHeight - barH) window.scrollBy({ top: r.bottom - (window.innerHeight - barH) + 12, behavior: 'smooth' });
+    }
+  }
+  function renderDetail(list) {
+    const i = list.findIndex(t => t.id === ui.selectedId);
+    const card = $('detail');
+    if (i < 0) { card.hidden = true; $('chart-hint').hidden = false; return; }
+    const t = list[i];
+    const avg = list.reduce((s, x) => s + ratio(x), 0) / list.length;
+    const diff = avg - ratio(t);
+    card.hidden = false;
+    $('chart-hint').hidden = true;
+    card.style.borderColor = color(t.platform);
+    $('d-top').innerHTML = titleHtml(t);
+    const dateLong = new Date(t.date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    $('d-date').textContent = (t.name ? t.platform + ' · ' : '') + dateLong.charAt(0).toUpperCase() + dateLong.slice(1) + ` · tournoi ${i + 1}/${list.length}`;
+    $('d-place').textContent = `${fmtInt(t.place)} / ${fmtInt(t.players)}`;
+    $('d-ratio').textContent = 'Top ' + fmtPct(ratio(t));
+    $('d-gain').textContent = fmtNet(netOf(t));
+    $('d-gain').className = 'v ' + signCls(netOf(t));
+    $('d-money').innerHTML = `Buy-in ${fmtEur(buyinOf(t))} · Gain <strong class="pos">${fmtEur(gainOf(t))}</strong>`;
+    $('d-compare').innerHTML = list.length < 2 || Math.abs(diff) < 0.05
+      ? `Dans ta moyenne (Top ${fmtPct(avg)}).`
+      : `<strong class="${diff > 0 ? 'good' : 'bad'}">${diff > 0 ? '▲' : '▼'} ${Math.abs(diff).toFixed(1).replace('.', ',')} pts</strong> ${diff > 0 ? 'mieux' : 'moins bien'} que ta moyenne (Top ${fmtPct(avg)}).`;
+    $('d-prev').disabled = i === 0;
+    $('d-next').disabled = i === list.length - 1;
+    $('d-prev').dataset.id = i > 0 ? list[i - 1].id : '';
+    $('d-next').dataset.id = i < list.length - 1 ? list[i + 1].id : '';
+  }
+  $('d-close').addEventListener('click', () => select(null));
+  $('d-prev').addEventListener('click', e => e.currentTarget.dataset.id && select(e.currentTarget.dataset.id));
+  $('d-next').addEventListener('click', e => e.currentTarget.dataset.id && select(e.currentTarget.dataset.id));
+  $('d-edit').addEventListener('click', () => ui.selectedId && openModal('edit', ui.selectedId));
+
+  // ---------- Modale (ajout / modification) ----------
+  const FIELDS = ['m-name', 'm-date', 'm-platform', 'm-players', 'm-place', 'm-itm', 'm-buyin', 'm-gain'];
+
+  function fillFields(v) {
+    $('m-name').value = v.name || '';
+    $('m-date').value = v.date || today();
+    $('m-platform').value = v.platform || 'Winamax';
+    $('m-players').value = v.players || '';
+    $('m-place').value = v.place || '';
+    $('m-itm').checked = !!v.itm;
+    const money = (x) => x === undefined || x === null || x === 0 || x === '' ? '' : String(x).replace('.', ',');
+    $('m-buyin').value = money(v.buyin);
+    $('m-gain').value = money(v.gain);
+  }
+  function readFields() {
+    return {
+      name: $('m-name').value,
+      date: $('m-date').value,
+      platform: $('m-platform').value,
+      players: $('m-players').value,
+      place: $('m-place').value,
+      itm: $('m-itm').checked,
+      buyin: $('m-buyin').value,
+      gain: $('m-gain').value
+    };
+  }
+  function validate(v) {
+    const players = parseInt(v.players, 10);
+    const place = parseInt(v.place, 10);
+    const gain = parseGain(v.gain);
+    const buyin = parseGain(v.buyin);
+    if (!v.date) return { error: 'Indique la date du tournoi.' };
+    if (!players || players < 2) return { error: 'Le nombre de joueurs doit être au moins 2.' };
+    if (!place || place < 1) return { error: 'La place finale doit être au moins 1.' };
+    if (place > players) return { error: 'La place ne peut pas dépasser le nombre de joueurs.' };
+    if (isNaN(buyin) || buyin < 0) return { error: 'Le buy-in doit être un montant positif (ex. 10,50).' };
+    if (isNaN(gain) || gain < 0) return { error: 'Le gain doit être un montant positif (ex. 125,50).' };
+    return { value: { name: String(v.name || '').trim().slice(0, 60), date: v.date, platform: v.platform, players, place, itm: !!v.itm, buyin, gain } };
+  }
+  function updatePreview() {
+    const v = readFields();
+    const players = parseInt(v.players, 10), place = parseInt(v.place, 10);
+    const top = players >= 2 && place >= 1 && place <= players ? `Top ${fmtPct(place / players * 100)}` : '–';
+    const g = parseGain(v.gain), bi = parseGain(v.buyin);
+    const net = isNaN(g) || isNaN(bi) ? null : Math.round((g - bi) * 100) / 100;
+    $('m-preview').innerHTML = `Résultat : <strong>${top}</strong>` +
+      (net !== null && (g || bi) ? ` · Bilan : <strong class="${signCls(net)}">${fmtNet(net)}</strong>` : '');
+  }
+
+  function lockScroll() {
+    if (lockedScroll !== null) return;
+    lockedScroll = window.scrollY;
+    document.body.style.top = -lockedScroll + 'px';
+    document.body.classList.add('modal-open');
+  }
+  function anyModalOpen() {
+    return ['modal', 'list-modal', 'backup-modal'].some(id => !$(id).hidden);
+  }
+  function unlockScroll() {
+    if (lockedScroll === null) return;
+    document.body.classList.remove('modal-open');
+    document.body.style.top = '';
+    window.scrollTo(0, lockedScroll);
+    lockedScroll = null;
+  }
+
+  // mode : 'add' ou 'edit' ; values : saisie en cours à restaurer (facultatif)
+  function openModal(mode, id, values) {
+    const t = mode === 'edit' ? tournaments.find(x => x.id === id) : null;
+    if (mode === 'edit' && !t) return;
+    const start = values || (t ? Object.assign({}, t) : { platform: lastPlatform() });
+    ui.modal = { mode, id: t ? t.id : null, values: start };
+    saveUI();
+
+    fillFields(start);
+    $('m-title').textContent = t ? 'Modifier le tournoi' : 'Nouveau tournoi';
+    $('m-ok').textContent = t ? 'OK' : 'Ajouter';
+    $('m-submit').textContent = t ? 'Enregistrer' : 'Ajouter le tournoi';
+    $('m-delete').hidden = !t;
+    $('m-sub').textContent = t
+      ? `${t.name ? t.name + ' · ' : ''}${t.platform} · ${fmtDate(t.date)} · ${fmtInt(t.place)}/${fmtInt(t.players)}${gainOf(t) || buyinOf(t) ? ' · ' + fmtNet(netOf(t)) : ''}`
+      : '';
+    $('m-error').textContent = '';
+    updatePreview();
+    lockScroll();
+    $('modal').hidden = false;
+    $('modal').querySelector('.modal').scrollTop = 0;
+  }
+  function closeModal() {
+    document.activeElement && document.activeElement.blur();
+    $('modal').hidden = true;
+    ui.modal = null;
+    if (!anyModalOpen()) unlockScroll();
+    saveUI();
+  }
+
+  // ---------- Modale « Mes tournois » ----------
+  function openList() {
+    ui.listOpen = true;
+    saveUI();
+    lockScroll();
+    $('list-modal').hidden = false;
+  }
+  function closeList() {
+    $('list-modal').hidden = true;
+    ui.listOpen = false;
+    if (!anyModalOpen()) unlockScroll();
+    saveUI();
+  }
+  $('list-btn').addEventListener('click', openList);
+  $('l-close').addEventListener('click', closeList);
+  $('list-modal').addEventListener('click', e => { if (e.target === $('list-modal')) closeList(); });
+  function lastPlatform() {
+    const last = tournaments.slice().sort((a, b) => b.created - a.created)[0];
+    return ui.filter !== 'all' ? ui.filter : (last ? last.platform : 'Winamax');
+  }
+
+  FIELDS.forEach(id => {
+    const onChange = () => {
+      if (!ui.modal) return;
+      ui.modal.values = readFields();
+      saveUI();
+      updatePreview();
+    };
+    $(id).addEventListener('input', onChange);
+    $(id).addEventListener('change', onChange);
+  });
+
+  $('m-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const r = validate(readFields());
+    if (r.error) return $('m-error').textContent = r.error;
+    if (ui.modal && ui.modal.mode === 'edit') {
+      const t = tournaments.find(x => x.id === ui.modal.id);
+      if (t) Object.assign(t, r.value);
+    } else {
+      tournaments.push(Object.assign({ id: newId(), created: Date.now() }, r.value));
+    }
+    saveData();
+    closeModal();
+    render();
+  });
+
+  $('add-btn').addEventListener('click', () => openModal('add'));
+  $('m-close').addEventListener('click', closeModal);
+  $('modal').addEventListener('click', e => { if (e.target === $('modal')) closeModal(); });
+  $('m-delete').addEventListener('click', () => {
+    const t = ui.modal && tournaments.find(x => x.id === ui.modal.id);
+    if (t) askDelete(t, closeModal);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (!$('sheet').hidden) closeSheet();
+    else if (!$('modal').hidden) closeModal();
+    else if (!$('backup-modal').hidden) closeBackup();
+    else if (!$('list-modal').hidden) closeList();
+  });
+
+  $('list').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    if (btn.dataset.edit) openModal('edit', btn.dataset.edit);
+    if (btn.dataset.del) {
+      const t = tournaments.find(x => x.id === btn.dataset.del);
+      if (t) askDelete(t);
+    }
+  });
+
+  // ---------- Confirmation ----------
+  function askDelete(t, after) {
+    openSheet(`Supprimer le tournoi ${t.platform} du ${fmtDate(t.date)} (${fmtInt(t.place)}/${fmtInt(t.players)}) ?`, 'Supprimer', () => {
+      tournaments = tournaments.filter(x => x.id !== t.id);
+      saveData();
+      after && after();
+      render();
+    });
+  }
+  function openSheet(text, okLabel, action) {
+    $('sheet-text').textContent = text;
+    $('sheet-ok').textContent = okLabel;
+    sheetAction = action;
+    $('sheet').hidden = false;
+  }
+  function closeSheet() { $('sheet').hidden = true; sheetAction = null; }
+  $('sheet-ok').addEventListener('click', () => { const a = sheetAction; closeSheet(); a && a(); });
+  $('sheet-cancel').addEventListener('click', closeSheet);
+  $('sheet').addEventListener('click', e => { if (e.target === $('sheet')) closeSheet(); });
+
+  // ---------- Filtres ----------
+  document.querySelectorAll('.chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Toucher une plateforme : n'afficher qu'elle (l'autre est barrée).
+      // La toucher à nouveau : réafficher les deux.
+      const p = btn.dataset.filter;
+      ui.filter = ui.filter === p ? 'all' : p;
+      saveUI();
+      render();
+    });
+  });
+
+  // ---------- Modale « Sauvegarde » ----------
+  function renderBackupInfo() {
+    const n = tournaments.length;
+    const last = ui.lastExport
+      ? 'Dernier export : ' + new Date(ui.lastExport).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+      : 'Aucun export pour le moment';
+    $('b-sub').textContent = `${n} tournoi${n > 1 ? 's' : ''} enregistré${n > 1 ? 's' : ''} · ${last}`;
+  }
+  function openBackup() {
+    ui.backupOpen = true;
+    saveUI();
+    backupMsg();
+    $('export-zone').hidden = true;
+    renderBackupInfo();
+    lockScroll();
+    $('backup-modal').hidden = false;
+  }
+  function closeBackup() {
+    $('backup-modal').hidden = true;
+    ui.backupOpen = false;
+    if (!anyModalOpen()) unlockScroll();
+    saveUI();
+  }
+  $('save-btn').addEventListener('click', openBackup);
+  $('b-close').addEventListener('click', closeBackup);
+  $('backup-modal').addEventListener('click', e => { if (e.target === $('backup-modal')) closeBackup(); });
+  const markExported = () => { ui.lastExport = Date.now(); saveUI(); renderBackupInfo(); };
+
+  // ---------- Export / import ----------
+  const backupJson = () => JSON.stringify(tournaments, null, 2);
+  function backupMsg(ok, err) {
+    $('b-status').textContent = ok || '';
+    $('import-error').textContent = err || '';
+  }
+  function showExportText(json) {
+    $('export-zone').hidden = false;
+    $('export-text').value = json;
+    $('export-text').focus();
+    $('export-text').setSelectionRange(0, json.length);
+  }
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; }
+    catch (e) {
+      // Ancienne méthode, si le presse-papiers moderne est refusé
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+      document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+      let ok = false; try { ok = document.execCommand('copy'); } catch (_) {}
+      ta.remove();
+      return ok;
+    }
+  }
+
+  $('export').addEventListener('click', async () => {
+    backupMsg();
+    if (!tournaments.length) return backupMsg('', 'Aucun tournoi à exporter dans cette appli.');
+    const json = backupJson();
+    const name = 'poker-progression-' + today() + '.json';
+    // On essaie plusieurs types : iOS refuse parfois le JSON mais accepte le texte
+    const candidates = [
+      new File([json], name, { type: 'application/json' }),
+      new File([json], name, { type: 'text/plain' })
+    ];
+    if (navigator.share) {
+      const file = navigator.canShare ? candidates.find(f => navigator.canShare({ files: [f] })) : null;
+      try {
+        if (file) await navigator.share({ files: [file], title: name });
+        else await navigator.share({ title: name, text: json }); // partage du texte brut
+        markExported();
+        backupMsg('Sauvegarde envoyée ✓ (' + tournaments.length + ' tournois)');
+        return;
+      } catch (e) {
+        if (e.name === 'AbortError') return; // partage annulé
+      }
+    }
+    // Dernier recours : téléchargement (ordinateur) + texte affiché à copier
+    try {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(candidates[0]);
+      a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    } catch (e) {}
+    showExportText(json);
+    markExported();
+    backupMsg('', "Si aucun fichier n'apparaît, copie le texte ci-dessous.");
+  });
+
+  $('copy-data').addEventListener('click', async () => {
+    backupMsg();
+    if (!tournaments.length) return backupMsg('', 'Aucun tournoi à copier dans cette appli.');
+    const json = backupJson();
+    if (await copyText(json)) {
+      markExported();
+      backupMsg(`Données copiées ✓ (${tournaments.length} tournois) — colle-les dans Notes ou un mail.`);
+    } else {
+      showExportText(json);
+      backupMsg('', 'Copie automatique impossible : sélectionne et copie le texte ci-dessous.');
+    }
+  });
+
+  function parseBackup(text) {
+    let data = JSON.parse(String(text).trim());
+    if (data && !Array.isArray(data) && Array.isArray(data.tournaments)) data = data.tournaments;
+    if (!Array.isArray(data)) throw new Error();
+    return data.filter(t => t && t.date && t.platform && t.players && t.place)
+      .map((t, i) => ({ id: t.id || newId() + i, name: typeof t.name === 'string' ? t.name.slice(0, 60) : '', date: t.date, platform: t.platform, players: +t.players, place: +t.place, itm: !!t.itm, buyin: +t.buyin || 0, gain: +t.gain || 0, created: t.created || Date.now() + i }));
+  }
+  function askImport(text) {
+    backupMsg();
+    let clean;
+    try { clean = parseBackup(text); }
+    catch (err) { return backupMsg('', 'Sauvegarde invalide : le texte doit commencer par [ et finir par ].'); }
+    if (!clean.length) return backupMsg('', 'Aucun tournoi trouvé dans cette sauvegarde.');
+    openSheet(`Importer ${clean.length} tournoi(s) ? Les données actuelles seront remplacées.`, 'Importer', () => {
+      tournaments = clean; saveData(); render();
+      $('paste-text').value = ''; $('paste-zone').hidden = true;
+      renderBackupInfo();
+      backupMsg(`${clean.length} tournois importés ✓`);
+    });
+  }
+
+  $('import').addEventListener('click', () => $('import-file').click());
+  $('import-file').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => { e.target.value = ''; askImport(reader.result); };
+    reader.onerror = () => backupMsg('', 'Impossible de lire ce fichier.');
+    reader.readAsText(file);
+  });
+  $('paste-toggle').addEventListener('click', () => {
+    $('paste-zone').hidden = !$('paste-zone').hidden;
+    if (!$('paste-zone').hidden) $('paste-text').focus();
+  });
+  $('paste-import').addEventListener('click', () => askImport($('paste-text').value));
+
+  // ---------- Mémoriser la position de défilement ----------
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  let scrollTimer = null;
+  window.addEventListener('scroll', () => {
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => { if (lockedScroll === null) { ui.scrollY = Math.round(window.scrollY); saveUI(); } }, 150);
+  }, { passive: true });
+  const persistNow = () => { ui.scrollY = lockedScroll !== null ? lockedScroll : Math.round(window.scrollY); saveUI(); };
+  window.addEventListener('pagehide', persistNow);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') persistNow(); });
+
+  // Re-render au changement de thème clair/sombre
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+
+  // ---------- Démarrage : tout restaurer ----------
+  render();
+  const restore = () => {
+    if (lockedScroll !== null) { lockedScroll = ui.scrollY || 0; document.body.style.top = -lockedScroll + 'px'; }
+    else window.scrollTo(0, ui.scrollY || 0);
+  };
+  requestAnimationFrame(() => {
+    restore();
+    // Rouvre les fenêtres qui étaient ouvertes, avec la saisie en cours
+    if (ui.listOpen) openList();
+    if (ui.backupOpen) openBackup();
+    if (ui.modal) openModal(ui.modal.mode, ui.modal.id, ui.modal.values);
+  });
+  window.addEventListener('load', restore);
+})();
+</script>
+</body>
+</html>
