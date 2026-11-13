@@ -187,6 +187,7 @@
   form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .full { grid-column: 1 / -1; }
   .opt { color: var(--muted); }
+  .itm-note { color: var(--muted); font-size: .78rem; margin-top: -6px; }
   .item .top, .detail .top { min-width: 0; }
   .item > div:first-child { min-width: 0; }
   .t-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -545,11 +546,6 @@
       <label>Ma place finale
         <input type="number" id="m-place" min="1" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="87" required>
       </label>
-      <label class="toggle full" for="m-itm">
-        <span>Classé ITM<small>Dans les places payées</small></span>
-        <input type="checkbox" id="m-itm" role="switch">
-        <span class="switch" aria-hidden="true"></span>
-      </label>
       <label>Buy-in
         <span class="field-wrap">
           <input type="text" id="m-buyin" inputmode="decimal" placeholder="0,00">
@@ -562,6 +558,7 @@
           <span class="suffix">€</span>
         </span>
       </label>
+      <div class="itm-note full">ITM automatique dès qu'un gain est renseigné.</div>
       <div class="preview full" id="m-preview"></div>
       <div class="error full" id="m-error"></div>
       <button type="submit" class="btn primary full" id="m-submit">Ajouter le tournoi</button>
@@ -614,6 +611,7 @@
   const ratio = (t) => (t.place / t.players) * 100;
   const gainOf = (t) => +t.gain || 0;
   const buyinOf = (t) => +t.buyin || 0;
+  const itmOf = (t) => gainOf(t) > 0;   // ITM = un gain a été renseigné
   const netOf = (t) => Math.round((gainOf(t) - buyinOf(t)) * 100) / 100;
   const signCls = (n) => n < 0 ? 'neg' : 'pos';
   const fmtNet = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + fmtEur(Math.abs(n));
@@ -623,7 +621,7 @@
   const fmtInt = (n) => n.toLocaleString('fr-FR');
   const esc = (str) => String(str || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   // Titre : le nom du tournoi s'il existe, sinon la plateforme
-  const titleHtml = (t) => `<span class="dot" style="background:${color(t.platform)}"></span><span class="t-name">${esc(t.name || t.platform)}</span>${t.itm ? ' <span class="badge">ITM</span>' : ''}`;
+  const titleHtml = (t) => `<span class="dot" style="background:${color(t.platform)}"></span><span class="t-name">${esc(t.name || t.platform)}</span>${itmOf(t) ? ' <span class="badge">ITM</span>' : ''}`;
   const fmtEur = (n) => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
   const parseGain = (s) => {
     const v = String(s || '').replace(/\s|€/g, '').replace(',', '.');
@@ -684,7 +682,7 @@
     const best = list.reduce((b, t) => ratio(t) < ratio(b) ? t : b);
     $('s-best').textContent = 'Top ' + fmtPct(ratio(best));
     $('s-best-sub').textContent = `${fmtInt(best.place)}/${fmtInt(best.players)} · ${best.platform}`;
-    const itm = list.filter(t => t.itm).length;
+    const itm = list.filter(itmOf).length;
     $('s-itm').textContent = Math.round(itm / list.length * 100) + ' %';
     $('s-itm-sub').textContent = `${itm} sur ${list.length} tournoi${list.length > 1 ? 's' : ''}`;
   }
@@ -725,12 +723,12 @@
           borderWidth: 1.25,
           tension: 0.25,
           // ITM = point plein, hors ITM = point creux
-          pointBackgroundColor: list.map(t => t.itm ? color(t.platform) : surface),
-          pointBorderColor: list.map(t => t.itm ? surface : color(t.platform)),
-          pointBorderWidth: list.map(t => t.itm ? 1.5 : 1.75),
+          pointBackgroundColor: list.map(t => itmOf(t) ? color(t.platform) : surface),
+          pointBorderColor: list.map(t => itmOf(t) ? surface : color(t.platform)),
+          pointBorderWidth: list.map(t => itmOf(t) ? 1.5 : 1.75),
           // Tournoi payant (buy-in > 0) = étoile, freeroll = rond
           pointStyle: list.map(t => buyinOf(t) > 0
-            ? starImage(color(t.platform), t.itm, surface, t.id === ui.selectedId ? 10 : (small ? 4.5 : 6.5))
+            ? starImage(color(t.platform), itmOf(t), surface, t.id === ui.selectedId ? 10 : (small ? 4.5 : 6.5))
             : 'circle'),
           pointRadius: list.map(t => t.id === ui.selectedId ? 6.5 : (small ? 2.25 : 3.5)),
           pointHoverRadius: list.map(t => t.id === ui.selectedId ? 6.5 : (small ? 2.25 : 3.5)),
@@ -1002,7 +1000,7 @@
   $('d-edit').addEventListener('click', () => ui.selectedId && openModal('edit', ui.selectedId));
 
   // ---------- Modale (ajout / modification) ----------
-  const FIELDS = ['m-name', 'm-date', 'm-platform', 'm-players', 'm-place', 'm-itm', 'm-buyin', 'm-gain'];
+  const FIELDS = ['m-name', 'm-date', 'm-platform', 'm-players', 'm-place', 'm-buyin', 'm-gain'];
 
   function fillFields(v) {
     $('m-name').value = v.name || '';
@@ -1010,7 +1008,6 @@
     $('m-platform').value = v.platform || 'Winamax';
     $('m-players').value = v.players || '';
     $('m-place').value = v.place || '';
-    $('m-itm').checked = !!v.itm;
     const money = (x) => x === undefined || x === null || x === 0 || x === '' ? '' : String(x).replace('.', ',');
     $('m-buyin').value = money(v.buyin);
     $('m-gain').value = money(v.gain);
@@ -1022,7 +1019,6 @@
       platform: $('m-platform').value,
       players: $('m-players').value,
       place: $('m-place').value,
-      itm: $('m-itm').checked,
       buyin: $('m-buyin').value,
       gain: $('m-gain').value
     };
@@ -1038,7 +1034,7 @@
     if (place > players) return { error: 'La place ne peut pas dépasser le nombre de joueurs.' };
     if (isNaN(buyin) || buyin < 0) return { error: 'Le buy-in doit être un montant positif (ex. 10,50).' };
     if (isNaN(gain) || gain < 0) return { error: 'Le gain doit être un montant positif (ex. 125,50).' };
-    return { value: { name: String(v.name || '').trim().slice(0, 60), date: v.date, platform: v.platform, players, place, itm: !!v.itm, buyin, gain } };
+    return { value: { name: String(v.name || '').trim().slice(0, 60), date: v.date, platform: v.platform, players, place, itm: gain > 0, buyin, gain } };
   }
   function updatePreview() {
     const v = readFields();
@@ -1047,7 +1043,8 @@
     const g = parseGain(v.gain), bi = parseGain(v.buyin);
     const net = isNaN(g) || isNaN(bi) ? null : Math.round((g - bi) * 100) / 100;
     $('m-preview').innerHTML = `Résultat : <strong>${top}</strong>` +
-      (net !== null && (g || bi) ? ` · Bilan : <strong class="${signCls(net)}">${fmtNet(net)}</strong>` : '');
+      (net !== null && (g || bi) ? ` · Bilan : <strong class="${signCls(net)}">${fmtNet(net)}</strong>` : '') +
+      (g > 0 ? ' <span class="badge">ITM</span>' : '');
   }
 
   function lockScroll() {
@@ -1267,8 +1264,9 @@
     if (navigator.share) {
       const file = navigator.canShare ? candidates.find(f => navigator.canShare({ files: [f] })) : null;
       try {
-        if (file) await navigator.share({ files: [file], title: name });
-        else await navigator.share({ title: name, text: json }); // partage du texte brut
+        // Pas de « title » ni de « text » : sinon iOS ajoute un fichier texte en plus du fichier de sauvegarde
+        if (file) await navigator.share({ files: [file] });
+        else await navigator.share({ text: json }); // partage du texte brut
         markExported();
         backupMsg('Sauvegarde envoyée ✓ (' + tournaments.length + ' tournois)');
         return;
@@ -1307,7 +1305,7 @@
     if (data && !Array.isArray(data) && Array.isArray(data.tournaments)) data = data.tournaments;
     if (!Array.isArray(data)) throw new Error();
     return data.filter(t => t && t.date && t.platform && t.players && t.place)
-      .map((t, i) => ({ id: t.id || newId() + i, name: typeof t.name === 'string' ? t.name.slice(0, 60) : '', date: t.date, platform: t.platform, players: +t.players, place: +t.place, itm: !!t.itm, buyin: +t.buyin || 0, gain: +t.gain || 0, created: t.created || Date.now() + i }));
+      .map((t, i) => ({ id: t.id || newId() + i, name: typeof t.name === 'string' ? t.name.slice(0, 60) : '', date: t.date, platform: t.platform, players: +t.players, place: +t.place, itm: (+t.gain || 0) > 0, buyin: +t.buyin || 0, gain: +t.gain || 0, created: t.created || Date.now() + i }));
   }
   function askImport(text) {
     backupMsg();
