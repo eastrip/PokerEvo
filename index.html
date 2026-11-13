@@ -641,7 +641,7 @@
   }
 
   // ---------- Rendu ----------
-  function render() {
+  function render(quick) {
     const list = visible();
     document.querySelectorAll('.chip').forEach(b => {
       const off = ui.filter !== 'all' && b.dataset.filter !== ui.filter;
@@ -651,7 +651,7 @@
     $('lg-wina').hidden = ui.filter === 'PokerStars';
     $('lg-ps').hidden = ui.filter === 'Winamax';
     renderStats(list);
-    renderChart(list);
+    renderChart(list, quick);
     renderList(list);
     renderDetail(list);
     $('list-count').textContent = list.length || '';
@@ -960,13 +960,8 @@
       }
     }
     saveUI();
-    render();
-    if (scroll && id) {
-      const card = $('detail');
-      const r = card.getBoundingClientRect();
-      const barH = document.querySelector('.bottom-bar').offsetHeight;
-      if (r.bottom > window.innerHeight - barH) window.scrollBy({ top: r.bottom - (window.innerHeight - barH) + 12, behavior: 'smooth' });
-    }
+    // Rendu immédiat, sans animation ni défilement de la page : le graphique reste immobile
+    render(true);
   }
   function renderDetail(list) {
     const i = list.findIndex(t => t.id === ui.selectedId);
