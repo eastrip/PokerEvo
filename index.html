@@ -31,6 +31,7 @@
     --avg: #52514e;
     --danger: #c4312f;
     --itm: #0f8a3c;
+    --rolling: #b7791f;   /* moyenne glissante (or, jeton de poker) */
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
     --safe-left: env(safe-area-inset-left, 0px);
@@ -51,6 +52,7 @@
       --avg: #c3c2b7;
       --danger: #ff6b6b;
       --itm: #22a855;
+      --rolling: #e0a83a;
     }
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -72,7 +74,7 @@
   header { align-items: center; margin-bottom: 14px; }
   header h1 {
     font-family: "Rye", Georgia, serif;
-    font-size: 2rem; font-weight: normal; line-height: 1.15;
+    font-size: 3em; font-weight: normal; line-height: 1.1;
     margin: 4px 0 0; letter-spacing: .02em;
   }
 
@@ -151,6 +153,22 @@
   }
   #z-range:disabled { opacity: .35; }
   #z-range:focus { outline: none; }
+  .roll-line { width: 22px; height: 0; border-top: 2px solid var(--rolling); display: inline-block; }
+  .legend #lg-roll[hidden] { display: none; }
+  .bilan-box { position: relative; height: 200px; touch-action: pan-y; }
+  .bilan-total { font-weight: 700; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+  #bilan-info strong { font-variant-numeric: tabular-nums; }
+  .cmp-vs { color: var(--muted); font-size: .8rem; }
+  .cmp { display: grid; grid-template-columns: 1fr auto auto; gap: 0; font-variant-numeric: tabular-nums; }
+  .cmp > div { padding: 9px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; }
+  .cmp > div:nth-last-child(-n+3) { border-bottom: 0; }
+  .cmp .c-h { color: var(--muted); font-size: .74rem; padding: 0 0 6px; }
+  .cmp .c-label { color: var(--text-2); font-size: .9rem; }
+  .cmp .c-now, .cmp .c-delta, .cmp .c-h + .c-h { padding-left: 12px; }
+  .cmp .c-now { font-weight: 700; justify-content: flex-end; }
+  .cmp .c-now small { color: var(--muted); font-weight: 400; font-size: .75rem; margin-left: 5px; }
+  .cmp .c-delta { font-size: .82rem; font-weight: 600; justify-content: flex-end; min-width: 84px; }
+  .cmp .c-delta.flat { color: var(--muted); font-weight: 400; }
   .zoom-info { color: var(--muted); font-size: .76rem; text-align: center; margin-top: 4px; min-height: 1em; }
   .zoom-info:empty { display: none; }
   .empty { color: var(--muted); text-align: center; padding: 50px 10px; font-size: .92rem; }
@@ -193,6 +211,19 @@
   .full { grid-column: 1 / -1; }
   .opt { color: var(--muted); }
   .itm-note { color: var(--muted); font-size: .78rem; margin-top: -6px; }
+  .money-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
+  .itm-col { display: flex; flex-direction: column; gap: 5px; font-size: .8rem; color: var(--text-2); }
+  .itm-toggle {
+    -webkit-appearance: none; appearance: none;
+    min-height: 46px; min-width: 62px; padding: 0 10px; border-radius: 10px;
+    border: 1.5px solid var(--border); background: var(--bg); color: var(--muted);
+    font: inherit; font-size: .9rem; font-weight: 700; letter-spacing: .03em; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .itm-toggle::before { content: ""; width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid currentColor; box-sizing: border-box; }
+  .itm-toggle[aria-pressed="true"] { background: var(--itm); border-color: var(--itm); color: #fff; }
+  .itm-toggle[aria-pressed="true"]::before { content: "✓"; border: 0; width: auto; height: auto; font-size: .9rem; line-height: 1; }
+  .itm-toggle:disabled { opacity: .45; cursor: default; }
   .item .top, .detail .top { min-width: 0; }
   .item > div:first-child { min-width: 0; }
   .t-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -410,6 +441,15 @@
     </div>
   </div>
 
+  <!-- Comparaison ce mois-ci / mois dernier -->
+  <div class="card" id="compare-card">
+    <div class="card-head">
+      <h2>Ce mois-ci</h2>
+      <span class="cmp-vs" id="cmp-vs"></span>
+    </div>
+    <div class="cmp" id="cmp"></div>
+  </div>
+
   <div class="card">
     <div class="card-head">
       <h2>Progression</h2>
@@ -420,6 +460,7 @@
     </div>
     <div class="legend">
       <span><span class="dash"></span>Moyenne</span>
+      <span id="lg-roll"><span class="roll-line"></span>10 derniers</span>
       <span><span class="dot" style="background:var(--text-2)"></span>ITM</span>
       <span><span class="hollow"></span>Hors ITM</span>
       <span><span class="star-lg">★</span>Avec buy-in</span>
@@ -457,6 +498,19 @@
       <button type="button" class="icon-btn" id="d-edit">Modifier</button>
       <button type="button" class="icon-btn nav" id="d-next" aria-label="Tournoi suivant">›</button>
     </div>
+  </div>
+
+  <!-- Courbe du bilan cumulé -->
+  <div class="card">
+    <div class="card-head">
+      <h2>Bilan cumulé</h2>
+      <span class="bilan-total" id="bilan-total"></span>
+    </div>
+    <div class="bilan-box">
+      <canvas id="bilan-chart" aria-label="Évolution du bilan cumulé"></canvas>
+      <div class="empty" id="bilan-empty" hidden>Le bilan apparaîtra avec tes premiers tournois.</div>
+    </div>
+    <div class="hint" id="bilan-info">Touche la courbe pour voir le bilan après un tournoi.</div>
   </div>
 
 
@@ -548,19 +602,25 @@
       <label>Ma place finale
         <input type="number" id="m-place" min="1" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="87" required>
       </label>
-      <label>Buy-in
-        <span class="field-wrap">
-          <input type="text" id="m-buyin" inputmode="decimal" placeholder="0,00">
-          <span class="suffix">€</span>
-        </span>
-      </label>
-      <label>Gain réalisé
-        <span class="field-wrap">
-          <input type="text" id="m-gain" inputmode="decimal" placeholder="0,00">
-          <span class="suffix">€</span>
-        </span>
-      </label>
-      <div class="itm-note full">ITM automatique dès qu'un gain est renseigné.</div>
+      <div class="money-row full">
+        <label>Buy-in
+          <span class="field-wrap">
+            <input type="text" id="m-buyin" inputmode="decimal" placeholder="0,00">
+            <span class="suffix">€</span>
+          </span>
+        </label>
+        <label>Gain réalisé
+          <span class="field-wrap">
+            <input type="text" id="m-gain" inputmode="decimal" placeholder="0,00">
+            <span class="suffix">€</span>
+          </span>
+        </label>
+        <div class="itm-col">
+          <span class="itm-label">Payé</span>
+          <button type="button" class="itm-toggle" id="m-itm" aria-pressed="false" disabled>ITM</button>
+        </div>
+      </div>
+      <div class="itm-note full">ITM coché automatiquement avec un gain. Décoche-le pour un gain de bounty sans finir dans les places payées.</div>
       <div class="preview full" id="m-preview"></div>
       <div class="error full" id="m-error"></div>
       <button type="submit" class="btn primary full" id="m-submit">Ajouter le tournoi</button>
@@ -613,7 +673,8 @@
   const ratio = (t) => (t.place / t.players) * 100;
   const gainOf = (t) => +t.gain || 0;
   const buyinOf = (t) => +t.buyin || 0;
-  const itmOf = (t) => gainOf(t) > 0;   // ITM = un gain a été renseigné
+  // ITM : il faut un gain ; coché par défaut, sauf si décoché (gain de bounty hors places payées)
+  const itmOf = (t) => gainOf(t) > 0 && t.itm !== false;
   const netOf = (t) => Math.round((gainOf(t) - buyinOf(t)) * 100) / 100;
   const signCls = (n) => n < 0 ? 'neg' : 'pos';
   const fmtNet = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + fmtEur(Math.abs(n));
@@ -654,6 +715,8 @@
     renderChart(list, quick);
     renderList(list);
     renderDetail(list);
+    renderCompare(list);
+    renderBilan(list, quick);
     $('list-count').textContent = list.length || '';
     $('l-sub').textContent = ui.filter === 'all' ? 'Toutes les plateformes' : ui.filter;
   }
@@ -662,16 +725,17 @@
     $('s-count').textContent = list.length;
     const w = list.filter(t => t.platform === 'Winamax').length;
     $('s-count-sub').textContent = ui.filter === 'all' && list.length ? `${w} Winamax · ${list.length - w} Stars` : '';
-    const gains = list.reduce((s, t) => s + gainOf(t), 0);
-    const buyins = list.reduce((s, t) => s + buyinOf(t), 0);
-    const net = Math.round((gains - buyins) * 100) / 100;
+    const cents = (n) => Math.round(n * 100) / 100;
+    const gains = cents(list.reduce((s, t) => s + gainOf(t), 0));
+    const buyins = cents(list.reduce((s, t) => s + buyinOf(t), 0));
+    const net = cents(gains - buyins);
     $('s-gain').textContent = fmtNet(net);
     $('s-gain').className = 'value ' + signCls(net);
     const roi = buyins > 0 ? Math.round(net / buyins * 100) : null;
     $('s-gain-sub').innerHTML = list.length
       ? `Gains <strong class="pos">${fmtEur(gains)}</strong> · Buy-ins ${fmtEur(buyins)}` +
         (roi !== null ? `<br>ROI <strong class="${signCls(roi)}">${roi > 0 ? '+' : ''}${roi} %</strong>` : '')
-      : ''
+      : '';
     if (!list.length) {
       ['s-avg', 's-best', 's-itm'].forEach(id => $(id).textContent = '–');
       ['s-best-sub', 's-itm-sub'].forEach(id => $(id).textContent = '');
@@ -701,6 +765,15 @@
 
     const allValues = list.map(ratio);
     const avg = allValues.reduce((a, b) => a + b, 0) / allValues.length;
+    // Moyenne glissante : moyenne des 10 derniers tournois à chaque point
+    const ROLL = 10;
+    const rolling = allValues.map((_, i) => {
+      const from = Math.max(0, i - ROLL + 1);
+      const part = allValues.slice(from, i + 1);
+      return part.reduce((a, b) => a + b, 0) / part.length;
+    });
+    const showRolling = allValues.length >= 3;
+    $('lg-roll').hidden = !showRolling;
 
     // Fenêtre visible (zoom / défilement horizontal)
     const w = computeWindow(list);
@@ -710,7 +783,10 @@
     updateZoomBar(w, full.length);
     const small = list.length > 40;
     const surface = css('--surface');
-    const maxY = Math.min(100, Math.ceil(Math.max(...allValues, avg) * 1.15 / 5) * 5 || 5);
+    const NICE = [1, 2, 2.5, 3, 4, 5, 7.5, 10, 15, 20, 25, 30, 40, 50, 60, 75, 100];
+    const target = Math.max(...allValues, avg) * 1.12;
+    const maxY = NICE.find(n => n >= target) || 100;
+    // (la moyenne glissante reste toujours entre le min et le max des places : pas besoin d'élargir l'axe)
     const lineColor = ui.filter === 'all' ? css('--muted') : color(ui.filter);
 
     const data = {
@@ -740,6 +816,15 @@
           borderColor: css('--avg'),
           borderWidth: 1.25,
           borderDash: [5, 4],
+          pointRadius: 0,
+          pointHitRadius: 0
+        },
+        {
+          label: 'Moyenne des 10 derniers',
+          data: showRolling ? rolling.slice(w.start, w.end + 1) : [],
+          borderColor: css('--rolling'),
+          borderWidth: 2,
+          tension: 0.35,
           pointRadius: 0,
           pointHitRadius: 0
         }
@@ -822,6 +907,130 @@
     img.src = c.toDataURL();
     starCache[key] = img;
     return img;
+  }
+
+  // ---------- Comparaison ce mois-ci / mois dernier ----------
+  function periodStats(arr) {
+    if (!arr.length) return null;
+    const gains = arr.reduce((s, t) => s + gainOf(t), 0);
+    const buyins = arr.reduce((s, t) => s + buyinOf(t), 0);
+    return {
+      count: arr.length,
+      avg: arr.reduce((s, t) => s + ratio(t), 0) / arr.length,
+      itm: arr.filter(itmOf).length / arr.length * 100,
+      net: Math.round((gains - buyins) * 100) / 100
+    };
+  }
+  function renderCompare(list) {
+    const now = new Date();
+    const key = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    const curKey = key(now);
+    const prevKey = key(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+    const monthName = (k) => new Date(k + '-01T00:00:00').toLocaleDateString('fr-FR', { month: 'long' });
+    const cur = periodStats(list.filter(t => t.date.slice(0, 7) === curKey));
+    const prev = periodStats(list.filter(t => t.date.slice(0, 7) === prevKey));
+    $('cmp-vs').textContent = `${monthName(curKey)} vs ${monthName(prevKey)}`;
+
+    const pts = (v) => v.toFixed(1).replace('.', ',') + ' pts';
+    // better = true si la hausse est une amélioration
+    const delta = (c, p, better, fmt) => {
+      if (c == null || p == null) return '<div class="c-delta flat">–</div>';
+      const d = c - p;
+      if (Math.abs(d) < 0.05) return '<div class="c-delta flat">= stable</div>';
+      const good = better ? d > 0 : d < 0;
+      return `<div class="c-delta ${good ? 'pos' : 'neg'}">${good ? '▲' : '▼'} ${d > 0 ? '+' : '−'}${fmt(Math.abs(d))}</div>`;
+    };
+    const rows = [
+      { label: 'Tournois', now: cur ? String(cur.count) : '0', prev: prev ? prev.count : 0,
+        d: (cur || prev) ? `<div class="c-delta flat">${(cur ? cur.count : 0) - (prev ? prev.count : 0) >= 0 ? '+' : '−'}${Math.abs((cur ? cur.count : 0) - (prev ? prev.count : 0))}</div>` : '<div class="c-delta flat">–</div>' },
+      { label: 'Place moy.', now: cur ? 'Top ' + fmtPct(cur.avg) : '–', prev: prev ? 'Top ' + fmtPct(prev.avg) : '–',
+        d: delta(cur && cur.avg, prev && prev.avg, false, pts) },
+      { label: 'Taux ITM', now: cur ? Math.round(cur.itm) + ' %' : '–', prev: prev ? Math.round(prev.itm) + ' %' : '–',
+        d: delta(cur && cur.itm, prev && prev.itm, true, pts) },
+      { label: 'Bilan', now: cur ? `<span class="${signCls(cur.net)}">${fmtNet(cur.net)}</span>` : '–', prev: prev ? fmtNet(prev.net) : '–',
+        d: delta(cur && cur.net, prev && prev.net, true, fmtEur) }
+    ];
+    $('cmp').innerHTML =
+      `<div class="c-h"></div><div class="c-h" style="justify-content:flex-end">${monthName(curKey)} <span style="opacity:.7">&nbsp;(${monthName(prevKey)})</span></div><div class="c-h" style="justify-content:flex-end">Évolution</div>` +
+      rows.map(r => `<div class="c-label">${r.label}</div><div class="c-now">${r.now}<small>(${r.prev})</small></div>${r.d}`).join('');
+  }
+
+  // ---------- Courbe du bilan cumulé ----------
+  let bilanChart = null;
+  let bilanSelId = null;
+  function renderBilan(list, quick) {
+    const canvas = $('bilan-chart');
+    let run = 0;
+    const cumul = list.map(t => (run = Math.round((run + netOf(t)) * 100) / 100));
+    const total = cumul.length ? cumul[cumul.length - 1] : 0;
+    $('bilan-total').textContent = list.length ? fmtNet(total) : '';
+    $('bilan-total').className = 'bilan-total ' + signCls(total);
+    $('bilan-empty').hidden = list.length > 0;
+    canvas.style.display = list.length ? 'block' : 'none';
+    let bilanSel = list.findIndex(t => t.id === bilanSelId);
+    if (bilanSel < 0) bilanSel = null;
+
+    const info = $('bilan-info');
+    if (bilanSel != null) {
+      const t = list[bilanSel];
+      info.innerHTML = `Après ${esc(t.name || t.platform)} du ${fmtDate(t.date)} : <strong class="${signCls(cumul[bilanSel])}">${fmtNet(cumul[bilanSel])}</strong> (tournoi ${fmtNet(netOf(t))})`;
+    } else {
+      info.textContent = 'Touche la courbe pour voir le bilan après un tournoi.';
+    }
+
+    if (!window.Chart && list.length) {
+      $('bilan-empty').hidden = false; $('bilan-empty').textContent = 'Le graphique nécessite une connexion internet.';
+      canvas.style.display = 'none';
+    }
+    if (!window.Chart || !list.length) { if (bilanChart && !list.length) { bilanChart.destroy(); bilanChart = null; } return; }
+
+    const pos = css('--itm'), neg = css('--danger'), surface = css('--surface');
+    const small = list.length > 40;
+    const data = {
+      labels: list.map(t => fmtShort(t.date)),
+      datasets: [{
+        label: 'Bilan cumulé',
+        data: cumul,
+        borderWidth: 1.75,
+        tension: 0.2,
+        // Vert au-dessus de 0, rouge en dessous
+        segment: { borderColor: ctx => ctx.p1.parsed.y < 0 ? neg : pos },
+        borderColor: pos,
+        fill: { target: { value: 0 }, above: pos + '22', below: neg + '22' },
+        pointBackgroundColor: cumul.map(v => v < 0 ? neg : pos),
+        pointBorderColor: surface,
+        pointBorderWidth: 1.5,
+        pointRadius: cumul.map((_, i) => i === bilanSel ? 6 : (small ? 0 : 2.5)),
+        pointHoverRadius: cumul.map((_, i) => i === bilanSel ? 6 : (small ? 0 : 2.5)),
+        pointHitRadius: 16
+      }]
+    };
+    const options = {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: quick ? false : { duration: 250 },
+      events: ['click'],
+      interaction: { mode: 'nearest', axis: 'x', intersect: false },
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      onClick: (evt, _els, ch) => {
+        const hit = ch.getElementsAtEventForMode(evt, 'nearest', { axis: 'x', intersect: false }, false)[0];
+        bilanSelId = hit && list[hit.index] && list[hit.index].id !== bilanSelId ? list[hit.index].id : null;
+        renderBilan(list, true);
+      },
+      scales: {
+        y: {
+          grid: { color: ctx => ctx.tick.value === 0 ? css('--muted') : css('--grid') },
+          border: { display: false },
+          ticks: { color: css('--text-2'), font: { size: 11 }, maxTicksLimit: 5, callback: v => fmtEur(v) }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: css('--text-2'), font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 5 }
+        }
+      }
+    };
+    if (bilanChart) { bilanChart.data = data; bilanChart.options = options; bilanChart.update(quick ? 'none' : undefined); }
+    else bilanChart = new Chart(canvas, { type: 'line', data, options });
   }
 
   // ---------- Zoom et défilement du graphique ----------
@@ -960,8 +1169,21 @@
       }
     }
     saveUI();
-    // Rendu immédiat, sans animation ni défilement de la page : le graphique reste immobile
+    // Rendu immédiat, sans animation : le graphique ne se redessine pas en bougeant
     render(true);
+    // À l'ouverture depuis le graphique, l'écran descend jusqu'à la carte
+    if (scroll && id) requestAnimationFrame(scrollToDetail);
+  }
+  function scrollToDetail() {
+    const card = $('detail');
+    if (card.hidden) return;
+    const r = card.getBoundingClientRect();
+    const barH = document.querySelector('.bottom-bar').offsetHeight;
+    const visibleBottom = window.innerHeight - barH - 12;
+    let delta = 0;
+    if (r.bottom > visibleBottom) delta = r.bottom - visibleBottom;   // carte cachée en bas
+    if (r.top - delta < 12) delta = r.top - 12;                       // sans cacher son haut
+    if (Math.abs(delta) > 2) window.scrollBy({ top: delta, behavior: 'smooth' });
   }
   function renderDetail(list) {
     const i = list.findIndex(t => t.id === ui.selectedId);
@@ -995,7 +1217,7 @@
   $('d-edit').addEventListener('click', () => ui.selectedId && openModal('edit', ui.selectedId));
 
   // ---------- Modale (ajout / modification) ----------
-  const FIELDS = ['m-name', 'm-date', 'm-platform', 'm-players', 'm-place', 'm-buyin', 'm-gain'];
+  const FIELDS = ['m-name', 'm-date', 'm-platform', 'm-players', 'm-place', 'm-buyin', 'm-gain', 'm-itm'];
 
   function fillFields(v) {
     $('m-name').value = v.name || '';
@@ -1006,6 +1228,9 @@
     const money = (x) => x === undefined || x === null || x === 0 || x === '' ? '' : String(x).replace('.', ',');
     $('m-buyin').value = money(v.buyin);
     $('m-gain').value = money(v.gain);
+    const g = parseGain(v.gain);
+    setItm(g > 0 && v.itm !== false, !(g > 0));
+    $('m-gain').dataset.prev = g > 0 ? '1' : '0';
   }
   function readFields() {
     return {
@@ -1015,12 +1240,13 @@
       players: $('m-players').value,
       place: $('m-place').value,
       buyin: $('m-buyin').value,
-      gain: $('m-gain').value
+      gain: $('m-gain').value,
+      itm: $('m-itm').getAttribute('aria-pressed') === 'true'
     };
   }
   function validate(v) {
-    const players = parseInt(v.players, 10);
-    const place = parseInt(v.place, 10);
+    const players = /^\d+$/.test(String(v.players).trim()) ? +v.players : NaN;
+    const place = /^\d+$/.test(String(v.place).trim()) ? +v.place : NaN;
     const gain = parseGain(v.gain);
     const buyin = parseGain(v.buyin);
     if (!v.date) return { error: 'Indique la date du tournoi.' };
@@ -1029,7 +1255,7 @@
     if (place > players) return { error: 'La place ne peut pas dépasser le nombre de joueurs.' };
     if (isNaN(buyin) || buyin < 0) return { error: 'Le buy-in doit être un montant positif (ex. 10,50).' };
     if (isNaN(gain) || gain < 0) return { error: 'Le gain doit être un montant positif (ex. 125,50).' };
-    return { value: { name: String(v.name || '').trim().slice(0, 60), date: v.date, platform: v.platform, players, place, itm: gain > 0, buyin, gain } };
+    return { value: { name: String(v.name || '').trim().slice(0, 60), date: v.date, platform: v.platform, players, place, itm: gain > 0 && !!v.itm, buyin, gain } };
   }
   function updatePreview() {
     const v = readFields();
@@ -1039,7 +1265,7 @@
     const net = isNaN(g) || isNaN(bi) ? null : Math.round((g - bi) * 100) / 100;
     $('m-preview').innerHTML = `Résultat : <strong>${top}</strong>` +
       (net !== null && (g || bi) ? ` · Bilan : <strong class="${signCls(net)}">${fmtNet(net)}</strong>` : '') +
-      (g > 0 ? ' <span class="badge">ITM</span>' : '');
+      (g > 0 && v.itm ? ' <span class="badge">ITM</span>' : '');
   }
 
   function lockScroll() {
@@ -1110,6 +1336,23 @@
     return ui.filter !== 'all' ? ui.filter : (last ? last.platform : 'Winamax');
   }
 
+  function setItm(on, disabled) {
+    $('m-itm').setAttribute('aria-pressed', String(!!on));
+    $('m-itm').disabled = !!disabled;
+  }
+  // Gain saisi : ITM se coche tout seul quand le gain passe de 0 à un montant ; sans gain, ITM est impossible
+  $('m-gain').addEventListener('input', () => {
+    const has = parseGain($('m-gain').value) > 0;
+    const had = $('m-gain').dataset.prev === '1';
+    if (!has) setItm(false, true);
+    else if (!had) setItm(true, false);
+    $('m-gain').dataset.prev = has ? '1' : '0';
+  });
+  $('m-itm').addEventListener('click', () => {
+    setItm($('m-itm').getAttribute('aria-pressed') !== 'true', false);
+    $('m-itm').dispatchEvent(new Event('change'));
+  });
+
   FIELDS.forEach(id => {
     const onChange = () => {
       if (!ui.modal) return;
@@ -1132,6 +1375,9 @@
       tournaments.push(Object.assign({ id: newId(), created: Date.now() }, r.value));
     }
     saveData();
+    // Si le filtre masquait la plateforme de ce tournoi, on réaffiche tout pour qu'il apparaisse
+    if (ui.filter !== 'all' && r.value.platform !== ui.filter) ui.filter = 'all';
+    saveUI();
     closeModal();
     render();
   });
@@ -1166,6 +1412,7 @@
     openSheet(`Supprimer le tournoi ${t.platform} du ${fmtDate(t.date)} (${fmtInt(t.place)}/${fmtInt(t.players)}) ?`, 'Supprimer', () => {
       tournaments = tournaments.filter(x => x.id !== t.id);
       saveData();
+      if (ui.selectedId === t.id) { ui.selectedId = null; saveUI(); }
       after && after();
       render();
     });
@@ -1184,10 +1431,10 @@
   // ---------- Filtres ----------
   document.querySelectorAll('.chip').forEach(btn => {
     btn.addEventListener('click', () => {
-      // Toucher une plateforme : n'afficher qu'elle (l'autre est barrée).
-      // La toucher à nouveau : réafficher les deux.
+      // Les deux affichées : toucher une plateforme n'affiche qu'elle (l'autre est barrée).
+      // Une plateforme est filtrée : toucher n'importe quel bouton (dont celui barré) réaffiche les deux.
       const p = btn.dataset.filter;
-      ui.filter = ui.filter === p ? 'all' : p;
+      ui.filter = ui.filter === 'all' ? p : 'all';
       saveUI();
       render();
     });
@@ -1250,7 +1497,7 @@
     backupMsg();
     if (!tournaments.length) return backupMsg('', 'Aucun tournoi à exporter dans cette appli.');
     const json = backupJson();
-    const name = 'poker-progression-' + today() + '.json';
+    const name = 'pokerevo-' + today() + '.json';
     // On essaie plusieurs types : iOS refuse parfois le JSON mais accepte le texte
     const candidates = [
       new File([json], name, { type: 'application/json' }),
@@ -1299,17 +1546,35 @@
     let data = JSON.parse(String(text).trim());
     if (data && !Array.isArray(data) && Array.isArray(data.tournaments)) data = data.tournaments;
     if (!Array.isArray(data)) throw new Error();
-    return data.filter(t => t && t.date && t.platform && t.players && t.place)
-      .map((t, i) => ({ id: t.id || newId() + i, name: typeof t.name === 'string' ? t.name.slice(0, 60) : '', date: t.date, platform: t.platform, players: +t.players, place: +t.place, itm: (+t.gain || 0) > 0, buyin: +t.buyin || 0, gain: +t.gain || 0, created: t.created || Date.now() + i }));
+    const seen = new Set();
+    const platformOf = (p) => /^winamax$/i.test(String(p).trim()) ? 'Winamax'
+      : /^poker\s*stars$/i.test(String(p).trim()) ? 'PokerStars' : null;
+    return data.map((t, i) => {
+      if (!t || typeof t !== 'object') return null;
+      const date = String(t.date || '');
+      const platform = platformOf(t.platform || '');
+      const players = Math.round(+t.players), place = Math.round(+t.place);
+      const gain = Math.max(0, Math.round((+t.gain || 0) * 100) / 100);
+      const buyin = Math.max(0, Math.round((+t.buyin || 0) * 100) / 100);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(new Date(date + 'T00:00:00'))) return null;
+      if (!platform || !(players >= 2) || !(place >= 1) || place > players) return null;
+      let id = typeof t.id === 'string' && t.id ? t.id : newId() + i;
+      while (seen.has(id)) id = newId() + i;
+      seen.add(id);
+      return { id, name: typeof t.name === 'string' ? t.name.trim().slice(0, 60) : '', date, platform, players, place,
+               itm: gain > 0 && t.itm !== false, buyin, gain, created: +t.created || Date.now() + i };
+    }).filter(Boolean);
   }
   function askImport(text) {
     backupMsg();
     let clean;
     try { clean = parseBackup(text); }
     catch (err) { return backupMsg('', 'Sauvegarde invalide : le texte doit commencer par [ et finir par ].'); }
-    if (!clean.length) return backupMsg('', 'Aucun tournoi trouvé dans cette sauvegarde.');
+    if (!clean.length) return backupMsg('', 'Aucun tournoi valide trouvé dans cette sauvegarde.');
     openSheet(`Importer ${clean.length} tournoi(s) ? Les données actuelles seront remplacées.`, 'Importer', () => {
-      tournaments = clean; saveData(); render();
+      tournaments = clean; saveData();
+      ui.selectedId = null; bilanSelId = null; ui.view = { count: null, end: null }; saveUI();
+      render();
       $('paste-text').value = ''; $('paste-zone').hidden = true;
       renderBackupInfo();
       backupMsg(`${clean.length} tournois importés ✓`);
@@ -1343,7 +1608,11 @@
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') persistNow(); });
 
   // Re-render au changement de thème clair/sombre
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+  const darkMq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  if (darkMq) {
+    if (darkMq.addEventListener) darkMq.addEventListener('change', () => render());
+    else if (darkMq.addListener) darkMq.addListener(() => render());   // anciens iOS
+  }
 
   // ---------- Démarrage : tout restaurer ----------
   render();
