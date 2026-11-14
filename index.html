@@ -131,7 +131,7 @@
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
   .legend [hidden] { display: none; }
   .star-lg { color: var(--text-2); font-size: 1rem; line-height: 1; }
-  .dash { width: 22px; height: 0; border-top: 2px dashed var(--avg); display: inline-block; }
+  .dash { width: 22px; height: 0; border-top: 1px dashed var(--avg); opacity: .5; display: inline-block; }
   .chart-box { position: relative; height: 290px; touch-action: pan-y; -webkit-user-select: none; user-select: none; }
   .zoom-bar { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
   .zoom-bar[hidden] { display: none; }
@@ -153,7 +153,7 @@
   }
   #z-range:disabled { opacity: .35; }
   #z-range:focus { outline: none; }
-  .roll-line { width: 22px; height: 0; border-top: 2px solid var(--rolling); display: inline-block; }
+  .roll-line { width: 22px; height: 0; border-top: 2px dotted var(--rolling); display: inline-block; }
   .legend #lg-roll[hidden] { display: none; }
   .bilan-box { position: relative; height: 200px; touch-action: pan-y; }
   .bilan-total { font-weight: 700; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
@@ -813,8 +813,8 @@
         {
           label: 'Place moyenne',
           data: values.map(() => avg),
-          borderColor: css('--avg'),
-          borderWidth: 1.25,
+          borderColor: css('--avg') + '80',   // 50 % d'opacité
+          borderWidth: 0.75,
           borderDash: [5, 4],
           pointRadius: 0,
           pointHitRadius: 0
@@ -823,7 +823,9 @@
           label: 'Moyenne des 10 derniers',
           data: showRolling ? rolling.slice(w.start, w.end + 1) : [],
           borderColor: css('--rolling'),
-          borderWidth: 2,
+          borderWidth: 1,
+          borderDash: [1, 3],                 // pointillés
+          borderCapStyle: 'round',
           tension: 0.35,
           pointRadius: 0,
           pointHitRadius: 0
