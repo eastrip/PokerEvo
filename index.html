@@ -6,12 +6,16 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Poker MTT">
+<meta name="apple-mobile-web-app-title" content="PokerEvo">
 <meta name="format-detection" content="telephone=no">
 <meta name="theme-color" content="#f4f4f2" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)">
-<title>Poker Progression – Tournois MTT</title>
+<title>PokerEvo</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<!-- Police du titre : Rye (style saloon / table de poker), Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rye&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #f4f4f2;
@@ -64,8 +68,13 @@
     margin: 0 auto;
     padding: calc(12px + var(--safe-top)) calc(14px + var(--safe-right)) calc(100px + var(--safe-bottom)) calc(14px + var(--safe-left));
   }
-  header h1 { font-size: 1.75rem; font-weight: 750; margin: 6px 0 2px; letter-spacing: -0.02em; }
-  header p { margin: 0 0 14px; color: var(--text-2); font-size: .9rem; }
+  header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  header { align-items: center; margin-bottom: 14px; }
+  header h1 {
+    font-family: "Rye", Georgia, serif;
+    font-size: 2rem; font-weight: normal; line-height: 1.15;
+    margin: 4px 0 0; letter-spacing: .02em;
+  }
 
   .card {
     background: var(--surface);
@@ -76,38 +85,29 @@
   }
   .card h2 { font-size: 1.05rem; margin: 0 0 12px; }
 
-  /* Filtres : barre segmentée collante */
-  .filters-bar {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    margin: 0 calc(-14px - var(--safe-right)) 14px calc(-14px - var(--safe-left));
-    padding: calc(8px + var(--safe-top)) calc(14px + var(--safe-right)) 8px calc(14px + var(--safe-left));
-    background: color-mix(in srgb, var(--bg) 88%, transparent);
-    -webkit-backdrop-filter: blur(14px);
-    backdrop-filter: blur(14px);
-  }
-  .filters-row { display: flex; gap: 8px; align-items: stretch; }
+  /* En-tête de la carte « Progression » avec le filtre à droite */
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+  .card-head h2 { margin: 0; }
   .filters {
-    flex: 1;
-    display: grid; grid-template-columns: 1fr 1fr;
-    background: var(--border); padding: 3px; border-radius: 12px; gap: 3px;
+    display: grid; grid-template-columns: auto auto;
+    background: var(--border); padding: 2px; border-radius: 10px; gap: 2px;
   }
   .chip {
     -webkit-appearance: none; appearance: none;
     border: 0; background: transparent; color: var(--text-2);
-    min-height: 40px; border-radius: 9px;
-    font: inherit; font-size: .95rem; font-weight: 550;
-    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    min-height: 34px; padding: 0 10px; border-radius: 8px;
+    font: inherit; font-size: .85rem; font-weight: 600;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;
     cursor: pointer;
   }
   .chip { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.12); transition: opacity .15s; }
   /* Plateforme exclue par le filtre : barrée et estompée */
   .chip.off { background: transparent; box-shadow: none; color: var(--muted); text-decoration: line-through; text-decoration-thickness: 2px; }
   .chip.off .dot { opacity: .35; }
+  .chip .dot { width: 8px; height: 8px; }
   .save-btn {
     -webkit-appearance: none; appearance: none; flex: none;
-    width: 46px; border-radius: 12px; border: 1px solid var(--border);
+    width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--border);
     background: var(--surface); color: var(--text);
     display: flex; align-items: center; justify-content: center; cursor: pointer;
   }
@@ -181,7 +181,12 @@
     display: inline-flex; align-items: center; justify-content: center;
   }
   .bar-btn .count:empty { display: none; }
-  @media (max-width: 360px) { .bar-btn { font-size: .92rem; } }
+  @media (max-width: 360px) {
+    .bar-btn { font-size: .82rem; padding: 0 6px; }
+    .bar-btn .plus { font-size: 1.1rem; }
+    .chip { padding: 0 7px; font-size: .78rem; gap: 4px; }
+    .card-head h2 { font-size: .95rem; }
+  }
 
   /* Champs */
   form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -259,10 +264,11 @@
     grid-template-columns: 1fr auto auto;
     align-items: center;
     gap: 2px 12px;
-    padding: 11px 0;
-    border-bottom: 1px solid var(--border);
+    padding: 10px 10px;
+    border-radius: 12px;
   }
-  .item:last-child { border-bottom: 0; }
+  /* Un tournoi sur deux sur un fond légèrement teinté, pour mieux suivre les lignes */
+  .item:nth-child(even) { background: color-mix(in srgb, var(--text) 5%, var(--surface)); }
   .item .top { display: flex; align-items: center; gap: 8px; font-weight: 600; }
   .item .meta { color: var(--text-2); font-size: .85rem; font-variant-numeric: tabular-nums; }
   .item .right { text-align: right; font-variant-numeric: tabular-nums; }
@@ -271,7 +277,7 @@
   .pos { color: var(--itm) !important; }
   .neg { color: var(--danger) !important; }
   .item .meta { margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .item .row-actions { display: flex; gap: 2px; margin-right: -6px; }
+  .item .row-actions { display: flex; gap: 2px; margin-right: -4px; }
   .mini-btn {
     -webkit-appearance: none; appearance: none;
     width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%;
@@ -383,23 +389,15 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>♠ Poker Progression</h1>
-    <p>Mes places en tournois MTT, en % du field (place ÷ joueurs).</p>
-  </header>
-
-  <div class="filters-bar">
-    <div class="filters-row">
-      <div class="filters" role="group" aria-label="Filtrer par plateforme">
-        <button class="chip" data-filter="Winamax"><span class="dot" style="background:var(--winamax)"></span>Winamax</button>
-        <button class="chip" data-filter="PokerStars"><span class="dot" style="background:var(--pokerstars)"></span>PokerStars</button>
-      </div>
-      <button class="save-btn" id="save-btn" aria-label="Sauvegarde">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
-        </svg>
-      </button>
+    <div>
+      <h1>PokerEvo</h1>
     </div>
-  </div>
+    <button class="save-btn" id="save-btn" aria-label="Sauvegarde">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+      </svg>
+    </button>
+  </header>
 
   <div class="stats">
     <div class="stat"><div class="label">Tournois joués</div><div class="value" id="s-count">0</div><div class="sub" id="s-count-sub"></div></div>
@@ -413,10 +411,14 @@
   </div>
 
   <div class="card">
-    <h2>Progression</h2>
+    <div class="card-head">
+      <h2>Progression</h2>
+      <div class="filters" role="group" aria-label="Filtrer par plateforme">
+        <button class="chip" data-filter="Winamax"><span class="dot" style="background:var(--winamax)"></span>Winamax</button>
+        <button class="chip" data-filter="PokerStars"><span class="dot" style="background:var(--pokerstars)"></span>PokerStars</button>
+      </div>
+    </div>
     <div class="legend">
-      <span id="lg-wina"><span class="dot" style="background:var(--winamax)"></span>Winamax</span>
-      <span id="lg-ps"><span class="dot" style="background:var(--pokerstars)"></span>PokerStars</span>
       <span><span class="dash"></span>Moyenne</span>
       <span><span class="dot" style="background:var(--text-2)"></span>ITM</span>
       <span><span class="hollow"></span>Hors ITM</span>
@@ -648,8 +650,6 @@
       b.classList.toggle('off', off);
       b.setAttribute('aria-pressed', String(!off));
     });
-    $('lg-wina').hidden = ui.filter === 'PokerStars';
-    $('lg-ps').hidden = ui.filter === 'Winamax';
     renderStats(list);
     renderChart(list, quick);
     renderList(list);
