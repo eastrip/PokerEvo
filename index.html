@@ -118,13 +118,79 @@
   .hollow { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--text-2); display: inline-block; }
 
   /* Stats */
-  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; }
-  .stat.wide { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; }
-  .stat .label { color: var(--text-2); font-size: .78rem; }
-  .stat .value { font-size: 1.45rem; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
-  .stat .sub { color: var(--muted); font-size: .74rem; min-height: 1em; }
-  .stat.wide .sub { text-align: right; }
+  .chart-box canvas, .bilan-box canvas { max-width: 100%; }
+  /* Recherche et tri dans « Mes tournois » */
+  .list-tools {
+    position: sticky; top: -8px; z-index: 2;
+    display: grid; grid-template-columns: 1fr auto; gap: 8px;
+    margin: 0 -2px 6px; padding: 6px 2px 8px; background: var(--surface);
+  }
+  .search-wrap { position: relative; }
+  .search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: var(--muted); pointer-events: none; }
+  #l-search { padding-left: 34px; padding-right: 34px; min-height: 42px; }
+  #l-search::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
+  .search-clear {
+    -webkit-appearance: none; appearance: none; position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    width: 28px; height: 28px; border: 0; border-radius: 50%; background: var(--border); color: var(--text-2);
+    font-size: .75rem; cursor: pointer;
+  }
+  .search-clear[hidden] { display: none; }
+  #l-sort { min-height: 42px; width: auto; font-size: 16px; padding-right: 30px; }
+  .list-count { color: var(--muted); font-size: .76rem; margin: 0 2px 4px; min-height: 1em; }
+  .list mark { background: color-mix(in srgb, var(--rolling) 35%, transparent); color: inherit; border-radius: 3px; padding: 0 1px; }
+
+  /* Réorganisation des cartes (appui long puis glisser) */
+  .card[data-key] { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .card.drag-lift {
+    position: fixed; z-index: 30; margin: 0; pointer-events: none;
+    box-shadow: 0 16px 40px rgba(0,0,0,.28); transform: scale(1.02); transition: transform .15s, box-shadow .15s;
+    opacity: .97;
+  }
+  .card-placeholder {
+    border: 2px dashed var(--border); border-radius: 16px; margin-bottom: 14px;
+    background: color-mix(in srgb, var(--text) 3%, transparent);
+  }
+  .card.press { transform: scale(.985); transition: transform .35s; }
+  body.reordering { -webkit-user-select: none; user-select: none; }
+  .reorder-tip {
+    position: fixed; left: 50%; top: calc(10px + var(--safe-top)); transform: translateX(-50%); z-index: 31;
+    background: var(--accent); color: var(--surface); font-size: .8rem; font-weight: 600;
+    padding: 7px 14px; border-radius: 999px; box-shadow: 0 4px 14px rgba(0,0,0,.2); pointer-events: none;
+  }
+  .reorder-tip[hidden] { display: none; }
+  .storage-warn {
+    position: fixed; left: 12px; right: 12px; top: calc(8px + var(--safe-top)); z-index: 60;
+    background: var(--danger); color: #fff; font-size: .82rem; font-weight: 600; text-align: center;
+    padding: 10px 12px; border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,.25);
+  }
+  .storage-warn[hidden] { display: none; }
+
+  /* Carte « Ce mois-ci » : 4 indicateurs compacts */
+  #compare-card .card-head { margin-bottom: 10px; }
+  .cmp2 { display: grid; grid-template-columns: .75fr 1fr .9fr 1.35fr; font-variant-numeric: tabular-nums; }
+  .cmp2 > div { padding: 0 8px; border-left: 1px solid var(--border); min-width: 0; }
+  .cmp2 > div:first-child { padding-left: 0; border-left: 0; }
+  .cmp2 > div:last-child { padding-right: 0; }
+  .c2-v { font-size: min(1.15rem, 4.4vw); font-weight: 700; margin-top: 1px; white-space: nowrap; }
+  .c2-d { font-size: .72rem; font-weight: 650; white-space: nowrap; margin-top: 1px; }
+  .c2-d.flat { color: var(--muted); font-weight: 500; }
+  .cmp2 .k-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .c2-p { color: var(--muted); font-size: .68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Chiffres clés */
+  .kpi-card { padding: 14px 16px 12px; }
+  .k-label { color: var(--text-2); font-size: .74rem; }
+  .hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .hero-v { font-size: 2rem; font-weight: 750; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .hero-side { text-align: right; color: var(--text-2); font-size: .78rem; line-height: 1.55; font-variant-numeric: tabular-nums; }
+  .hero-side strong { font-weight: 650; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); padding-top: 10px; }
+  .kpis > div { padding: 0 8px; border-left: 1px solid var(--border); min-width: 0; }
+  .kpis > div:first-child { padding-left: 0; border-left: 0; }
+  .kpis > div:last-child { padding-right: 0; }
+  .k-v { font-size: 1.15rem; font-weight: 700; margin-top: 1px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .k-sub { color: var(--muted); font-size: .68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 1em; }
+  .k-sub .dot { width: 7px; height: 7px; margin-right: 2px; vertical-align: 0; }
 
   /* Graphique */
   .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: .8rem; color: var(--text-2); margin-bottom: 8px; }
@@ -155,9 +221,13 @@
   #z-range:focus { outline: none; }
   .roll-line { width: 22px; height: 0; border-top: 2px dotted var(--rolling); display: inline-block; }
   .legend #lg-roll[hidden] { display: none; }
-  .bilan-box { position: relative; height: 200px; touch-action: pan-y; }
-  .bilan-total { font-weight: 700; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
-  #bilan-info strong { font-variant-numeric: tabular-nums; }
+  [data-key="bilan"] .card-head { margin-bottom: 4px; }
+  .bilan-box { position: relative; height: 140px; touch-action: pan-y; }
+  .bilan-box .empty { padding: 40px 10px; }
+  .bilan-total { font-weight: 750; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+  .bilan-info { color: var(--muted); font-size: .74rem; margin-bottom: 8px; min-height: 1.2em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .bilan-info b { font-weight: 650; }
+  .bilan-info .sel { color: var(--text-2); }
   .cmp-vs { color: var(--muted); font-size: .8rem; }
   .cmp { display: grid; grid-template-columns: 1fr auto auto; gap: 0; font-variant-numeric: tabular-nums; }
   .cmp > div { padding: 9px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; }
@@ -169,6 +239,65 @@
   .cmp .c-now small { color: var(--muted); font-weight: 400; font-size: .75rem; margin-left: 5px; }
   .cmp .c-delta { font-size: .82rem; font-weight: 600; justify-content: flex-end; min-width: 84px; }
   .cmp .c-delta.flat { color: var(--muted); font-weight: 400; }
+  /* Cartes repliables : toucher le titre */
+  h2.fold { cursor: pointer; display: inline-flex; align-items: center; gap: 6px; -webkit-user-select: none; user-select: none; }
+  .chev { display: inline-block; color: var(--muted); font-size: 1.15em; line-height: 1; transform: rotate(90deg); transition: transform .2s; width: .7em; text-align: center; }
+  .card.collapsed .chev { transform: rotate(0deg); }
+  .card.collapsed > :not(.card-head) { display: none !important; }
+  .card.collapsed .card-head { margin-bottom: 0; }
+
+  /* Choix de la période du graphique */
+  .period { display: flex; gap: 6px; margin-bottom: 10px; }
+  .per-btn {
+    -webkit-appearance: none; appearance: none; flex: 1;
+    min-height: 32px; border-radius: 8px; border: 1px solid var(--border);
+    background: transparent; color: var(--text-2); font: inherit; font-size: .82rem; font-weight: 600; cursor: pointer;
+  }
+  .per-btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+
+  /* Séries : 3 indicateurs compacts + bande des derniers résultats */
+  .s-cols { display: grid; grid-template-columns: repeat(3, 1fr); font-variant-numeric: tabular-nums; }
+  .s-cols > div { padding: 0 8px; border-left: 1px solid var(--border); min-width: 0; }
+  .s-cols > div:first-child { padding-left: 0; border-left: 0; }
+  .s-v { font-size: min(1.2rem, 4.8vw); font-weight: 750; white-space: nowrap; margin-top: 1px; }
+  .s-v small { font-size: .7rem; font-weight: 500; color: var(--text-2); margin-left: 3px; }
+  .s-sub { color: var(--muted); font-size: .68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .s-strip { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .s-strip-lab { color: var(--muted); font-size: .68rem; white-space: nowrap; }
+  .s-dots { display: flex; gap: 3px; flex: 1; justify-content: flex-end; flex-wrap: nowrap; overflow: hidden; }
+  .s-dots i { width: 10px; height: 10px; border-radius: 3px; border: 1.5px solid var(--border); box-sizing: border-box; flex: none; }
+  .s-dots i.in { background: var(--itm); border-color: var(--itm); }
+  .s-empty { color: var(--muted); font-size: .85rem; }
+
+  /* Par taille de field : 3 colonnes compactes */
+  .ftable { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-variant-numeric: tabular-nums; }
+  .ftable > div { border-radius: 12px; padding: 9px 10px; background: var(--bg); min-width: 0; }
+  .ftable .f-best-col { background: color-mix(in srgb, var(--itm) 12%, var(--bg)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--itm) 45%, transparent); }
+  .ftable .f-none { opacity: .55; }
+  .f-name { font-weight: 700; font-size: .88rem; white-space: nowrap; }
+  .f-star { color: var(--itm); font-size: .8rem; }
+  .f-range { color: var(--muted); font-size: .68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .f-big { font-size: min(1.25rem, 5vw); font-weight: 750; margin-top: 4px; white-space: nowrap; }
+  .f-big small { font-size: .62rem; font-weight: 600; color: var(--muted); margin-right: 3px; text-transform: uppercase; letter-spacing: .03em; }
+  .f-line { font-size: .78rem; color: var(--text-2); white-space: nowrap; }
+  .f-line b { font-weight: 650; }
+  .f-line.pos b, .f-line.neg b { color: inherit; }
+  .f-count { color: var(--muted); font-size: .68rem; margin-top: 3px; white-space: nowrap; }
+
+  /* Répartition des places : histogramme vertical compact */
+  .dist { display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: 96px auto; column-gap: 6px; font-variant-numeric: tabular-nums; }
+  .h-col { display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; min-width: 0; border-bottom: 1px solid var(--border); }
+  .h-n { text-align: center; font-size: .72rem; font-weight: 700; margin-bottom: 3px; }
+  .h-n.zero { color: var(--muted); font-weight: 400; }
+  .h-stack { display: flex; flex-direction: column; border-radius: 5px 5px 0 0; overflow: hidden; min-height: 0; }
+  .h-seg { min-height: 2px; }
+  .h-seg.in { background: var(--itm); }
+  .h-seg.out { background: var(--rolling); }
+  .h-lab { text-align: center; color: var(--text-2); font-size: .66rem; padding-top: 4px; white-space: nowrap; }
+  .h-key { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin: 0 4px 0 0; vertical-align: -1px; }
+  .h-key.in { background: var(--itm); }
+  .h-key.out { background: var(--rolling); margin-left: 6px; }
+  #dist-hint b { color: var(--text); }
   .zoom-info { color: var(--muted); font-size: .76rem; text-align: center; margin-top: 4px; min-height: 1em; }
   .zoom-info:empty { display: none; }
   .empty { color: var(--muted); text-align: center; padding: 50px 10px; font-size: .92rem; }
@@ -204,6 +333,17 @@
     .bar-btn .plus { font-size: 1.1rem; }
     .chip { padding: 0 7px; font-size: .78rem; gap: 4px; }
     .card-head h2 { font-size: .95rem; }
+    .card-head { flex-wrap: wrap; row-gap: 8px; }
+    .cmp { font-size: .78rem; }
+    .cmp2 > div { padding: 0 5px; }
+    .c2-d { font-size: .66rem; }
+    .cmp2 .k-label { font-size: .68rem; }
+    .cmp .c-delta { min-width: 0; font-size: .74rem; }
+    .cmp .c-now, .cmp .c-delta, .cmp .c-h + .c-h { padding-left: 7px; }
+    .ftable > div { padding: 8px 7px; }
+    .k-v { font-size: 1rem; }
+    .kpis > div { padding: 0 5px; }
+    .hero-v { font-size: 1.7rem; }
   }
 
   /* Champs */
@@ -382,7 +522,28 @@
     box-shadow: 0 -8px 30px rgba(0,0,0,.2);
   }
   #list-modal .modal { min-height: 60dvh; }
-  #backup-modal { z-index: 42; }
+  #backup-modal, #pref-modal { z-index: 42; }
+  .header-actions { display: flex; gap: 8px; }
+  .pref-list { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .pref-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 10px 12px; min-height: 52px; border-bottom: 1px solid var(--border); cursor: pointer; position: relative;
+    flex-direction: row; color: var(--text); font-size: 1rem; text-align: left;
+  }
+  .pref-row > span:first-child { flex: 1; min-width: 0; }
+  .pref-row:last-child { border-bottom: 0; }
+  .pref-row span:first-child { font-size: .95rem; }
+  .pref-row small { display: block; color: var(--muted); font-size: .74rem; }
+  .pref-row input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .pref-row input:checked + .switch { background: var(--itm); }
+  .pref-row input:checked + .switch::after { transform: translateX(20px); }
+  .pref-row input:focus-visible + .switch { outline: 2px solid var(--pokerstars); outline-offset: 2px; }
+  .pref-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .pref-actions .btn { font-size: .9rem; min-height: 44px; }
+  .pref-tip { color: var(--muted); font-size: .78rem; margin: 12px 2px 0; }
+  .card.card-off { display: none !important; }
+  .all-hidden { text-align: center; color: var(--muted); font-size: .9rem; }
+  .all-hidden .link { justify-self: center; }
   .modal {
     max-height: calc(100dvh - var(--safe-top) - 16px);
     overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
@@ -412,51 +573,70 @@
   @media (min-width: 700px) {
     .modal-backdrop { align-items: center; }
     .modal { border-radius: 18px; }
-    .stats { grid-template-columns: repeat(4, 1fr); }
     .chart-box { height: 340px; }
   }
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="wrap" id="wrap">
   <header>
     <div>
       <h1>PokerEvo</h1>
     </div>
-    <button class="save-btn" id="save-btn" aria-label="Sauvegarde">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
-      </svg>
-    </button>
+    <div class="header-actions">
+      <button class="save-btn" id="pref-btn" aria-label="Préférences">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>
+        </svg>
+      </button>
+      <button class="save-btn" id="save-btn" aria-label="Sauvegarde">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+        </svg>
+      </button>
+    </div>
   </header>
 
-  <div class="stats">
-    <div class="stat"><div class="label">Tournois joués</div><div class="value" id="s-count">0</div><div class="sub" id="s-count-sub"></div></div>
-    <div class="stat"><div class="label">Place moyenne</div><div class="value" id="s-avg">–</div><div class="sub">en % du field</div></div>
-    <div class="stat"><div class="label">Meilleur résultat</div><div class="value" id="s-best">–</div><div class="sub" id="s-best-sub"></div></div>
-    <div class="stat"><div class="label">Taux ITM</div><div class="value" id="s-itm">–</div><div class="sub" id="s-itm-sub"></div></div>
-    <div class="stat wide">
-      <div><div class="label">Bilan (gains − buy-ins)</div><div class="value pos" id="s-gain">0 €</div></div>
-      <div class="sub" id="s-gain-sub"></div>
+  <div class="card all-hidden" id="all-hidden" hidden>Toutes les cartes sont masquées.<br><button type="button" class="link strong" id="all-hidden-btn">Ouvrir les préférences</button></div>
+
+  <!-- Chiffres clés : bilan en vedette + 4 indicateurs compacts -->
+  <div class="card kpi-card" data-key="kpi">
+    <div class="hero">
+      <div>
+        <div class="k-label">Bilan</div>
+        <div class="hero-v pos" id="s-gain">0 €</div>
+      </div>
+      <div class="hero-side" id="s-gain-sub"></div>
+    </div>
+    <div class="kpis">
+      <div><div class="k-label">Tournois</div><div class="k-v" id="s-count">0</div><div class="k-sub" id="s-count-sub"></div></div>
+      <div><div class="k-label">Place moy.</div><div class="k-v" id="s-avg">–</div><div class="k-sub">top du field</div></div>
+      <div><div class="k-label">Meilleur</div><div class="k-v" id="s-best">–</div><div class="k-sub" id="s-best-sub"></div></div>
+      <div><div class="k-label">ITM</div><div class="k-v" id="s-itm">–</div><div class="k-sub" id="s-itm-sub"></div></div>
     </div>
   </div>
 
   <!-- Comparaison ce mois-ci / mois dernier -->
-  <div class="card" id="compare-card">
+  <div class="card" id="compare-card" data-key="compare">
     <div class="card-head">
-      <h2>Ce mois-ci</h2>
+      <h2 class="fold"><span class="chev" aria-hidden="true">›</span>Ce mois-ci</h2>
       <span class="cmp-vs" id="cmp-vs"></span>
     </div>
-    <div class="cmp" id="cmp"></div>
+    <div class="cmp2" id="cmp"></div>
   </div>
 
-  <div class="card">
+  <div class="card" data-key="progression">
     <div class="card-head">
-      <h2>Progression</h2>
+      <h2 class="fold"><span class="chev" aria-hidden="true">›</span>Progression</h2>
       <div class="filters" role="group" aria-label="Filtrer par plateforme">
         <button class="chip" data-filter="Winamax"><span class="dot" style="background:var(--winamax)"></span>Winamax</button>
         <button class="chip" data-filter="PokerStars"><span class="dot" style="background:var(--pokerstars)"></span>PokerStars</button>
       </div>
+    </div>
+    <div class="period" role="group" aria-label="Période affichée">
+      <button type="button" class="per-btn" data-period="30">30 jours</button>
+      <button type="button" class="per-btn" data-period="90">3 mois</button>
+      <button type="button" class="per-btn" data-period="all">Tout</button>
     </div>
     <div class="legend">
       <span><span class="dash"></span>Moyenne</span>
@@ -501,24 +681,72 @@
   </div>
 
   <!-- Courbe du bilan cumulé -->
-  <div class="card">
+  <div class="card" data-key="bilan">
     <div class="card-head">
-      <h2>Bilan cumulé</h2>
+      <h2 class="fold"><span class="chev" aria-hidden="true">›</span>Bilan cumulé</h2>
       <span class="bilan-total" id="bilan-total"></span>
     </div>
+    <div class="bilan-info" id="bilan-info"></div>
     <div class="bilan-box">
       <canvas id="bilan-chart" aria-label="Évolution du bilan cumulé"></canvas>
       <div class="empty" id="bilan-empty" hidden>Le bilan apparaîtra avec tes premiers tournois.</div>
     </div>
-    <div class="hint" id="bilan-info">Touche la courbe pour voir le bilan après un tournoi.</div>
+  </div>
+
+  <!-- Résultats par taille de field -->
+  <div class="card" data-key="field">
+    <div class="card-head">
+      <h2 class="fold"><span class="chev" aria-hidden="true">›</span>Par taille de field</h2>
+    </div>
+    <div class="ftable" id="field-table"></div>
+    <div class="hint" id="field-hint"></div>
+  </div>
+
+  <!-- Répartition des places finales -->
+  <div class="card" data-key="dist">
+    <div class="card-head">
+      <h2 class="fold"><span class="chev" aria-hidden="true">›</span>Répartition des places</h2>
+    </div>
+    <div class="dist" id="dist"></div>
+    <div class="hint" id="dist-hint"></div>
+  </div>
+
+  <!-- Séries -->
+  <div class="card" data-key="series">
+    <div class="card-head">
+      <h2 class="fold"><span class="chev" aria-hidden="true">›</span>Séries</h2>
+    </div>
+    <div class="series" id="series"></div>
   </div>
 
 
 </div>
 
+<div class="storage-warn" id="storage-warn" hidden>⚠️ L'iPhone refuse d'enregistrer les données (navigation privée ou stockage plein). Exporte une sauvegarde !</div>
+<div class="reorder-tip" id="reorder-tip" hidden>Glisse la carte à sa nouvelle place</div>
+
 <div class="bottom-bar">
   <button class="bar-btn secondary" id="list-btn">Mes tournois<span class="count" id="list-count"></span></button>
   <button class="bar-btn primary" id="add-btn"><span class="plus">＋</span>Ajouter un tournoi</button>
+</div>
+
+<!-- Fenêtre modale : préférences -->
+<div class="modal-backdrop" id="pref-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="p-title">
+    <div class="grabber" aria-hidden="true"></div>
+    <div class="modal-head">
+      <span></span>
+      <h2 id="p-title">Préférences</h2>
+      <button type="button" class="link strong" id="p-close">OK</button>
+    </div>
+    <div class="modal-sub">Coche les cartes à afficher sur la page</div>
+    <div class="pref-list" id="pref-list"></div>
+    <div class="pref-actions">
+      <button type="button" class="btn secondary" id="p-all">Tout afficher</button>
+      <button type="button" class="btn secondary" id="p-order">Ordre par défaut</button>
+    </div>
+    <p class="pref-tip">Astuce : appui long sur une carte pour la déplacer, toucher son titre pour la replier.</p>
+  </div>
 </div>
 
 <!-- Fenêtre modale : sauvegarde -->
@@ -568,6 +796,22 @@
       <button type="button" class="link strong" id="l-close">OK</button>
     </div>
     <div class="modal-sub" id="l-sub"></div>
+    <div class="list-tools">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input type="search" id="l-search" placeholder="Nom, plateforme, date…" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+        <button type="button" class="search-clear" id="l-clear" aria-label="Effacer la recherche" hidden>✕</button>
+      </div>
+      <select id="l-sort" aria-label="Trier les tournois">
+        <option value="recent">Plus récents</option>
+        <option value="old">Plus anciens</option>
+        <option value="place">Meilleure place</option>
+        <option value="net">Meilleur bilan</option>
+        <option value="netlow">Pire bilan</option>
+        <option value="field">Plus gros field</option>
+      </select>
+    </div>
+    <div class="list-count" id="l-count"></div>
     <ul class="list" id="list"></ul>
     <div class="empty" id="list-empty" hidden>Aucun tournoi enregistré.</div>
   </div>
@@ -648,17 +892,38 @@
     try { const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }
     catch (e) { return fallback; }
   }
+  let storageWarned = false;
   function write(key, value) {
-    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+    try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+    catch (e) {
+      if (!storageWarned) {
+        storageWarned = true;
+        const b = document.getElementById('storage-warn');
+        if (b) b.hidden = false;
+      }
+      return false;
+    }
   }
+  // Demande au navigateur de ne pas effacer les données de l'appli (si possible)
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
 
   let tournaments = read(DATA_KEY, []);
+  if (!Array.isArray(tournaments)) tournaments = [];
   // État de l'interface : filtre, modale ouverte (et sa saisie en cours), position de défilement
-  const ui = Object.assign({ filter: 'all', modal: null, listOpen: false, backupOpen: false, lastExport: null, selectedId: null, view: { count: null, end: null }, scrollY: 0 }, read(UI_KEY, {}));
+  const ui = Object.assign({ filter: 'all', modal: null, listOpen: false, listSearch: '', listSort: 'recent', backupOpen: false, prefOpen: false, hiddenCards: {}, lastExport: null, selectedId: null, view: { count: null, end: null }, period: 'all', collapsed: {}, cardOrder: null, scrollY: 0 }, read(UI_KEY, {}));
   // Reprise des anciennes versions de la page
   if (!ui.modal && ui.editingId) ui.modal = { mode: 'edit', id: ui.editingId, values: ui.editDraft || null };
   delete ui.editingId; delete ui.editDraft; delete ui.draft;
   if (ui.modal && ui.modal.mode === 'edit' && !tournaments.some(t => t.id === ui.modal.id)) ui.modal = null;
+  const isObj = (o) => o && typeof o === 'object' && !Array.isArray(o);
+  if (!['all', 'Winamax', 'PokerStars'].includes(ui.filter)) ui.filter = 'all';
+  if (!['30', '90', 'all'].includes(ui.period)) ui.period = 'all';
+  if (!isObj(ui.view)) ui.view = { count: null, end: null };
+  if (!isObj(ui.collapsed)) ui.collapsed = {};
+  if (!isObj(ui.hiddenCards)) ui.hiddenCards = {};
+  if (ui.cardOrder != null && !Array.isArray(ui.cardOrder)) ui.cardOrder = null;
+  if (typeof ui.listSearch !== 'string') ui.listSearch = '';
+  if (ui.modal && !isObj(ui.modal)) ui.modal = null;
 
   const saveData = () => write(DATA_KEY, tournaments);
   const saveUI = () => write(UI_KEY, ui);
@@ -717,6 +982,10 @@
     renderDetail(list);
     renderCompare(list);
     renderBilan(list, quick);
+    renderFieldSizes(list);
+    renderDistribution(list);
+    renderSeries(list);
+    applyCollapsed();
     $('list-count').textContent = list.length || '';
     $('l-sub').textContent = ui.filter === 'all' ? 'Toutes les plateformes' : ui.filter;
   }
@@ -724,16 +993,18 @@
   function renderStats(list) {
     $('s-count').textContent = list.length;
     const w = list.filter(t => t.platform === 'Winamax').length;
-    $('s-count-sub').textContent = ui.filter === 'all' && list.length ? `${w} Winamax · ${list.length - w} Stars` : '';
+    $('s-count-sub').innerHTML = ui.filter === 'all' && list.length
+      ? `<span class="dot" style="background:var(--winamax)"></span>${w} <span class="dot" style="background:var(--pokerstars);margin-left:4px"></span>${list.length - w}`
+      : '';
     const cents = (n) => Math.round(n * 100) / 100;
     const gains = cents(list.reduce((s, t) => s + gainOf(t), 0));
     const buyins = cents(list.reduce((s, t) => s + buyinOf(t), 0));
     const net = cents(gains - buyins);
     $('s-gain').textContent = fmtNet(net);
-    $('s-gain').className = 'value ' + signCls(net);
+    $('s-gain').className = 'hero-v ' + signCls(net);
     const roi = buyins > 0 ? Math.round(net / buyins * 100) : null;
     $('s-gain-sub').innerHTML = list.length
-      ? `Gains <strong class="pos">${fmtEur(gains)}</strong> · Buy-ins ${fmtEur(buyins)}` +
+      ? `Gains <strong class="pos">${fmtEur(gains)}</strong><br>Buy-ins <strong>${fmtEur(buyins)}</strong>` +
         (roi !== null ? `<br>ROI <strong class="${signCls(roi)}">${roi > 0 ? '+' : ''}${roi} %</strong>` : '')
       : '';
     if (!list.length) {
@@ -742,17 +1013,31 @@
       return;
     }
     const avg = list.reduce((s, t) => s + ratio(t), 0) / list.length;
-    $('s-avg').textContent = 'Top ' + fmtPct(avg);
+    $('s-avg').textContent = fmtPct(avg);
     const best = list.reduce((b, t) => ratio(t) < ratio(b) ? t : b);
-    $('s-best').textContent = 'Top ' + fmtPct(ratio(best));
-    $('s-best-sub').textContent = `${fmtInt(best.place)}/${fmtInt(best.players)} · ${best.platform}`;
+    $('s-best').textContent = fmtPct(ratio(best));
+    $('s-best-sub').textContent = `${fmtInt(best.place)}/${fmtInt(best.players)}`;
+    $('s-best-sub').title = best.platform + (best.name ? ' · ' + best.name : '');
     const itm = list.filter(itmOf).length;
     $('s-itm').textContent = Math.round(itm / list.length * 100) + ' %';
-    $('s-itm-sub').textContent = `${itm} sur ${list.length} tournoi${list.length > 1 ? 's' : ''}`;
+    $('s-itm-sub').textContent = `${itm} sur ${list.length}`;
   }
+
+  // Période du graphique : les tournois sont triés par date, la période est donc la fin de la liste
+  function periodStart(list) {
+    if (ui.period === 'all') return 0;
+    const d = new Date(); d.setDate(d.getDate() - Number(ui.period));
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    const cutoff = d.toISOString().slice(0, 10);
+    const i = list.findIndex(t => t.date >= cutoff);
+    return i < 0 ? list.length : i;
+  }
+  const periodList = (list) => list.slice(periodStart(list));
 
   function renderChart(list, quick) {
     lastChartList = list;
+    document.querySelectorAll('.per-btn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.period === ui.period)));
+    $('empty').innerHTML = 'Aucun tournoi à afficher.<br>Touche « Ajouter un tournoi » pour commencer.';
     const canvas = $('chart');
     $('empty').hidden = list.length > 0;
     canvas.style.display = list.length ? 'block' : 'none';
@@ -775,16 +1060,28 @@
     const showRolling = allValues.length >= 3;
     $('lg-roll').hidden = !showRolling;
 
+    // Période choisie (la moyenne glissante est calculée avant, sur tout l'historique)
+    const p = periodStart(list);
+    const pList = list.slice(p), pValues = allValues.slice(p), pRolling = rolling.slice(p);
+    if (!pList.length) {
+      $('empty').hidden = false;
+      $('empty').innerHTML = 'Aucun tournoi sur cette période.<br>Choisis une période plus longue.';
+      canvas.style.display = 'none';
+      $('zoom-bar').hidden = true; $('z-info').textContent = '';
+      if (chart) { chart.destroy(); chart = null; }
+      return;
+    }
+
     // Fenêtre visible (zoom / défilement horizontal)
-    const w = computeWindow(list);
-    const full = list;
-    list = list.slice(w.start, w.end + 1);
-    const values = allValues.slice(w.start, w.end + 1);
+    const w = computeWindow(pList);
+    const full = pList;
+    list = pList.slice(w.start, w.end + 1);
+    const values = pValues.slice(w.start, w.end + 1);
     updateZoomBar(w, full.length);
     const small = list.length > 40;
     const surface = css('--surface');
     const NICE = [1, 2, 2.5, 3, 4, 5, 7.5, 10, 15, 20, 25, 30, 40, 50, 60, 75, 100];
-    const target = Math.max(...allValues, avg) * 1.12;
+    const target = Math.max(...pValues, avg) * 1.12;
     const maxY = NICE.find(n => n >= target) || 100;
     // (la moyenne glissante reste toujours entre le min et le max des places : pas besoin d'élargir l'axe)
     const lineColor = ui.filter === 'all' ? css('--muted') : color(ui.filter);
@@ -821,7 +1118,7 @@
         },
         {
           label: 'Moyenne des 10 derniers',
-          data: showRolling ? rolling.slice(w.start, w.end + 1) : [],
+          data: showRolling ? pRolling.slice(w.start, w.end + 1) : [],
           borderColor: css('--rolling'),
           borderWidth: 1,
           borderDash: [1, 3],                 // pointillés
@@ -929,37 +1226,47 @@
     const curKey = key(now);
     const prevKey = key(new Date(now.getFullYear(), now.getMonth() - 1, 1));
     const monthName = (k) => new Date(k + '-01T00:00:00').toLocaleDateString('fr-FR', { month: 'long' });
+    const monthShort = (k) => new Date(k + '-01T00:00:00').toLocaleDateString('fr-FR', { month: 'short' });
     const cur = periodStats(list.filter(t => t.date.slice(0, 7) === curKey));
     const prev = periodStats(list.filter(t => t.date.slice(0, 7) === prevKey));
     $('cmp-vs').textContent = `${monthName(curKey)} vs ${monthName(prevKey)}`;
 
-    const pts = (v) => v.toFixed(1).replace('.', ',') + ' pts';
-    // better = true si la hausse est une amélioration
+    const pts = (v) => (v >= 10 ? Math.round(v) : v.toFixed(1).replace('.', ',')) + ' pts';
+    // Montants arrondis à l'euro au-delà de 100 € pour tenir dans la colonne
+    const eur = (v) => fmtEur(Math.abs(v) >= 100 ? Math.round(v) : v);
+    const net = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + eur(Math.abs(v));
+    // Écart : ▲ vert = mieux, ▼ rouge = moins bien ; better = true si la hausse est une amélioration
     const delta = (c, p, better, fmt) => {
-      if (c == null || p == null) return '<div class="c-delta flat">–</div>';
+      if (c == null || p == null) return '<div class="c2-d flat">–</div>';
       const d = c - p;
-      if (Math.abs(d) < 0.05) return '<div class="c-delta flat">= stable</div>';
+      if (Math.abs(d) < 0.05) return '<div class="c2-d flat">= stable</div>';
       const good = better ? d > 0 : d < 0;
-      return `<div class="c-delta ${good ? 'pos' : 'neg'}">${good ? '▲' : '▼'} ${d > 0 ? '+' : '−'}${fmt(Math.abs(d))}</div>`;
+      return `<div class="c2-d ${good ? 'pos' : 'neg'}">${good ? '▲' : '▼'} ${fmt(Math.abs(d))}</div>`;
     };
-    const rows = [
-      { label: 'Tournois', now: cur ? String(cur.count) : '0', prev: prev ? prev.count : 0,
-        d: (cur || prev) ? `<div class="c-delta flat">${(cur ? cur.count : 0) - (prev ? prev.count : 0) >= 0 ? '+' : '−'}${Math.abs((cur ? cur.count : 0) - (prev ? prev.count : 0))}</div>` : '<div class="c-delta flat">–</div>' },
-      { label: 'Place moy.', now: cur ? 'Top ' + fmtPct(cur.avg) : '–', prev: prev ? 'Top ' + fmtPct(prev.avg) : '–',
+    const cN = cur ? cur.count : 0, pN = prev ? prev.count : 0;
+    const prevLabel = monthShort(prevKey);
+    const cells = [
+      { label: 'Tournois', now: String(cN), prev: String(pN),
+        d: `<div class="c2-d flat">${cN - pN > 0 ? '+' : cN - pN < 0 ? '−' : '='}${cN - pN ? Math.abs(cN - pN) : ''}</div>` },
+      { label: 'Place moy.', now: cur ? fmtPct(cur.avg) : '–', prev: prev ? fmtPct(prev.avg) : '–',
         d: delta(cur && cur.avg, prev && prev.avg, false, pts) },
-      { label: 'Taux ITM', now: cur ? Math.round(cur.itm) + ' %' : '–', prev: prev ? Math.round(prev.itm) + ' %' : '–',
+      { label: 'ITM', now: cur ? Math.round(cur.itm) + ' %' : '–', prev: prev ? Math.round(prev.itm) + ' %' : '–',
         d: delta(cur && cur.itm, prev && prev.itm, true, pts) },
-      { label: 'Bilan', now: cur ? `<span class="${signCls(cur.net)}">${fmtNet(cur.net)}</span>` : '–', prev: prev ? fmtNet(prev.net) : '–',
-        d: delta(cur && cur.net, prev && prev.net, true, fmtEur) }
+      { label: 'Bilan', now: cur ? `<span class="${signCls(cur.net)}">${net(cur.net)}</span>` : '–', prev: prev ? net(prev.net) : '–',
+        d: delta(cur && cur.net, prev && prev.net, true, eur) }
     ];
-    $('cmp').innerHTML =
-      `<div class="c-h"></div><div class="c-h" style="justify-content:flex-end">${monthName(curKey)} <span style="opacity:.7">&nbsp;(${monthName(prevKey)})</span></div><div class="c-h" style="justify-content:flex-end">Évolution</div>` +
-      rows.map(r => `<div class="c-label">${r.label}</div><div class="c-now">${r.now}<small>(${r.prev})</small></div>${r.d}`).join('');
+    $('cmp').innerHTML = cells.map(c => `
+      <div>
+        <div class="k-label">${c.label}</div>
+        <div class="c2-v">${c.now}</div>
+        ${c.d}
+        <div class="c2-p">${prevLabel} ${c.prev}</div>
+      </div>`).join('');
   }
 
   // ---------- Courbe du bilan cumulé ----------
   let bilanChart = null;
-  let bilanSelId = null;
+  let bilanSelId = ui.bilanSelId || null;
   function renderBilan(list, quick) {
     const canvas = $('bilan-chart');
     let run = 0;
@@ -972,12 +1279,17 @@
     let bilanSel = list.findIndex(t => t.id === bilanSelId);
     if (bilanSel < 0) bilanSel = null;
 
+    // Ligne d'info : plus haut / plus bas, ou le point touché sur la courbe
     const info = $('bilan-info');
     if (bilanSel != null) {
       const t = list[bilanSel];
-      info.innerHTML = `Après ${esc(t.name || t.platform)} du ${fmtDate(t.date)} : <strong class="${signCls(cumul[bilanSel])}">${fmtNet(cumul[bilanSel])}</strong> (tournoi ${fmtNet(netOf(t))})`;
+      const d = t.date.split('-');
+      info.innerHTML = `<span class="sel">${+d[2]}/${+d[1]} · ${esc(t.name || t.platform)} : <b class="${signCls(netOf(t))}">${fmtNet(netOf(t))}</b> → cumul <b class="${signCls(cumul[bilanSel])}">${fmtNet(cumul[bilanSel])}</b></span>`;
+    } else if (list.length) {
+      const hi = Math.max(0, ...cumul), lo = Math.min(0, ...cumul);
+      info.innerHTML = `Plus haut <b class="pos">${fmtNet(hi)}</b> · plus bas <b class="${signCls(lo)}">${fmtNet(lo)}</b> · touche la courbe`;
     } else {
-      info.textContent = 'Touche la courbe pour voir le bilan après un tournoi.';
+      info.textContent = '';
     }
 
     if (!window.Chart && list.length) {
@@ -1017,22 +1329,361 @@
       onClick: (evt, _els, ch) => {
         const hit = ch.getElementsAtEventForMode(evt, 'nearest', { axis: 'x', intersect: false }, false)[0];
         bilanSelId = hit && list[hit.index] && list[hit.index].id !== bilanSelId ? list[hit.index].id : null;
+        ui.bilanSelId = bilanSelId; saveUI();
         renderBilan(list, true);
       },
       scales: {
         y: {
           grid: { color: ctx => ctx.tick.value === 0 ? css('--muted') : css('--grid') },
           border: { display: false },
-          ticks: { color: css('--text-2'), font: { size: 11 }, maxTicksLimit: 5, callback: v => fmtEur(v) }
+          ticks: { color: css('--text-2'), font: { size: 10 }, maxTicksLimit: 4, callback: v => fmtEur(Math.abs(v) >= 100 ? Math.round(v) : v) }
         },
         x: {
           grid: { display: false },
-          ticks: { color: css('--text-2'), font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 5 }
+          ticks: { color: css('--text-2'), font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 4 }
         }
       }
     };
     if (bilanChart) { bilanChart.data = data; bilanChart.options = options; bilanChart.update(quick ? 'none' : undefined); }
     else bilanChart = new Chart(canvas, { type: 'line', data, options });
+  }
+
+  // ---------- Résultats par taille de field ----------
+  const FIELD_SIZES = [
+    { label: 'Petits', sub: '< 1 000', long: 'moins de 1 000', test: n => n < 1000 },
+    { label: 'Moyens', sub: '1 000 – 5 000', long: '1 000 à 5 000', test: n => n >= 1000 && n <= 5000 },
+    { label: 'Gros', sub: '> 5 000', long: 'plus de 5 000', test: n => n > 5000 }
+  ];
+  function renderFieldSizes(list) {
+    const cols = FIELD_SIZES.map(f => ({ f, s: periodStats(list.filter(t => f.test(t.players))) }));
+    const filled = cols.filter(c => c.s);
+    // Meilleure tranche = meilleure place moyenne (seulement s'il y a au moins 2 tranches à comparer)
+    const bestAvg = filled.length > 1 ? Math.min(...filled.map(c => c.s.avg)) : null;
+    const eur = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + fmtEur(Math.abs(v) >= 100 ? Math.round(Math.abs(v)) : Math.abs(v));
+    $('field-table').innerHTML = cols.map(({ f, s }) => {
+      const best = s && s.avg === bestAvg;
+      return `<div class="${best ? 'f-best-col' : ''}${s ? '' : ' f-none'}">
+        <div class="f-name">${f.label}${best ? ' <span class="f-star">★</span>' : ''}</div>
+        <div class="f-range">${f.sub}</div>
+        <div class="f-big">${s ? '<small>Top</small>' + fmtPct(s.avg) : '–'}</div>
+        <div class="f-line">ITM <b>${s ? Math.round(s.itm) + ' %' : '–'}</b></div>
+        <div class="f-line ${s ? signCls(s.net) : ''}"><b>${s ? eur(s.net) : '–'}</b></div>
+        <div class="f-count">${s ? s.count + ' tournoi' + (s.count > 1 ? 's' : '') : 'aucun'}</div>
+      </div>`;
+    }).join('');
+    const best = filled.length > 1 ? filled.find(c => c.s.avg === bestAvg) : null;
+    $('field-hint').textContent = !list.length ? 'Ajoute des tournois pour voir tes résultats par taille de field.'
+      : best ? '★ = ta meilleure place moyenne.'
+      : 'Joue des fields de tailles différentes pour pouvoir comparer.';
+  }
+
+  // ---------- Séries ----------
+  function renderSeries(list) {
+    if (!list.length) { $('series').innerHTML = '<div class="s-empty">Ajoute des tournois pour voir tes séries.</div>'; return; }
+    // Parcours chronologique : plus longues suites ITM / sans ITM, avec leurs dates
+    let best = { n: 0 }, worst = { n: 0 }, run = null;
+    list.forEach(t => {
+      const itm = itmOf(t);
+      if (run && run.itm === itm) { run.n++; run.to = t.date; }
+      else run = { itm, n: 1, from: t.date, to: t.date };
+      if (itm && run.n > best.n) best = Object.assign({}, run);
+      if (!itm && run.n > worst.n) worst = Object.assign({}, run);
+    });
+    const dm = (d) => { const [, m, j] = d.split('-'); return `${+j}/${+m}`; };   // date courte : 22/8
+    const range = (r) => !r.n ? '' : r.from === r.to ? 'le ' + dm(r.from) : `${dm(r.from)} → ${dm(r.to)}`;
+    // Bande des 20 derniers tournois : carré vert = ITM, carré vide = hors ITM (le plus récent à droite)
+    const last = list.slice(-20);
+    $('series').innerHTML = `
+      <div class="s-cols">
+        <div><div class="k-label">En cours</div>
+          <div class="s-v ${run.itm ? 'pos' : 'neg'}">${run.n}<small>${run.itm ? 'ITM' : 'sans ITM'}</small></div>
+          <div class="s-sub">depuis le ${dm(run.from)}</div></div>
+        <div><div class="k-label">Record ITM</div>
+          <div class="s-v ${best.n ? 'pos' : ''}">${best.n}<small>d'affilée</small></div>
+          <div class="s-sub">${best.n ? range(best) : 'pas encore'}</div></div>
+        <div><div class="k-label">Pire série</div>
+          <div class="s-v ${worst.n ? 'neg' : ''}">${worst.n}<small>sans ITM</small></div>
+          <div class="s-sub">${worst.n ? range(worst) : 'aucune'}</div></div>
+      </div>
+      <div class="s-strip" title="${last.length} derniers tournois">
+        <span class="s-strip-lab">Derniers</span>
+        <span class="s-dots">${last.map(t => `<i class="${itmOf(t) ? 'in' : ''}" title="${fmtDate(t.date)} · ${itmOf(t) ? 'ITM' : 'hors ITM'}"></i>`).join('')}</span>
+      </div>`;
+  }
+
+  // ---------- Cartes repliables ----------
+  // Cartes masquées dans les préférences (la carte du tournoi suit la carte Progression)
+  function applyHidden() {
+    document.querySelectorAll('#wrap > .card[data-key]').forEach(c => c.classList.toggle('card-off', !!ui.hiddenCards[c.dataset.key]));
+    $('detail').classList.toggle('card-off', !!ui.hiddenCards.progression);
+    $('all-hidden').hidden = cardEls().some(c => !ui.hiddenCards[c.dataset.key]);
+  }
+  function applyCollapsed() {
+    applyHidden();
+    document.querySelectorAll('.card[data-key]').forEach(c => {
+      const folded = !!ui.collapsed[c.dataset.key];
+      c.classList.toggle('collapsed', folded);
+      const h = c.querySelector('h2.fold');
+      if (h) h.setAttribute('aria-expanded', String(!folded));
+    });
+  }
+  document.querySelectorAll('.card[data-key] h2.fold').forEach(h => {
+    h.setAttribute('role', 'button');
+    h.setAttribute('tabindex', '0');
+    const toggle = () => {
+      const key = h.closest('.card').dataset.key;
+      ui.collapsed[key] = !ui.collapsed[key];
+      if (key === 'progression' && ui.collapsed[key]) ui.selectedId = null;  // on ferme aussi la carte du tournoi
+      saveUI();
+      render(true);
+      // Les graphiques réapparus reprennent leur taille
+      if (!ui.collapsed[key]) requestAnimationFrame(() => { if (chart) chart.resize(); if (bilanChart) bilanChart.resize(); });
+    };
+    h.addEventListener('click', toggle);
+    h.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+  });
+
+  // ---------- Ordre des cartes : appui long puis glisser ----------
+  let lastDropAt = 0;
+  const cardEls = () => [...document.querySelectorAll('#wrap > .card[data-key]')];
+  // La carte « tournoi sélectionné » reste toujours juste sous le graphique Progression
+  function keepDetailUnderChart() {
+    const prog = document.querySelector('.card[data-key="progression"]');
+    if (prog && prog.nextElementSibling !== $('detail')) prog.after($('detail'));
+  }
+  function applyCardOrder() {
+    const order = Array.isArray(ui.cardOrder) ? ui.cardOrder : null;
+    if (order) {
+      const wrap = $('wrap');
+      const byKey = Object.fromEntries(cardEls().map(c => [c.dataset.key, c]));
+      const keys = order.filter(k => byKey[k]).concat(Object.keys(byKey).filter(k => !order.includes(k)));
+      keys.forEach(k => wrap.appendChild(byKey[k]));   // dans l'ordre enregistré, après l'en-tête
+    }
+    keepDetailUnderChart();
+  }
+
+  (function () {
+    const LONG_PRESS = 450;          // ms d'appui avant de pouvoir déplacer
+    const MOVE_TOLERANCE = 8;        // px de mouvement autorisés pendant l'appui
+    const NO_START = 'button, input, select, textarea, a, label, .chart-box, .bilan-box, .zoom-bar, .period, .filters';
+    let press = null, drag = null, raf = null;
+
+    function start(card, x, y) {
+      press = { card, x, y, timer: setTimeout(() => lift(), LONG_PRESS) };
+      card.classList.add('press');
+    }
+    function cancelPress() {
+      if (!press) return;
+      clearTimeout(press.timer);
+      press.card.classList.remove('press');
+      press = null;
+    }
+    function lift() {
+      const card = press.card, y = press.y;
+      card.classList.remove('press');
+      const r = card.getBoundingClientRect();
+      const ph = document.createElement('div');
+      ph.className = 'card-placeholder';
+      ph.style.height = r.height + 'px';
+      card.before(ph);
+      // La carte « détail » suit Progression : on la masque pendant le déplacement
+      if (card.dataset.key === 'progression') $('detail').style.display = 'none';
+      Object.assign(card.style, { width: r.width + 'px', left: r.left + 'px', top: r.top + 'px' });
+      card.classList.add('drag-lift');
+      document.body.classList.add('reordering');
+      $('reorder-tip').hidden = false;
+      drag = { card, ph, offset: y - r.top, y, startScroll: window.scrollY };
+      press = null;
+      if (navigator.vibrate) { try { navigator.vibrate(15); } catch (e) {} }
+      autoScroll();
+    }
+    function move(y) {
+      drag.y = y;
+      drag.card.style.top = (y - drag.offset) + 'px';
+      // Place le repère avant la première carte dont le milieu est sous le doigt
+      const others = cardEls().filter(c => c !== drag.card);
+      let before = null;
+      for (const c of others) {
+        const r = c.getBoundingClientRect();
+        if (y < r.top + r.height / 2) { before = c; break; }
+      }
+      if (before) { if (drag.ph.nextElementSibling !== before) before.before(drag.ph); }
+      else {
+        const last = others[others.length - 1];
+        const anchor = last && last.dataset.key === 'progression' && $('detail').style.display !== 'none' ? $('detail') : last;
+        if (anchor && anchor.nextElementSibling !== drag.ph) anchor.after(drag.ph);
+      }
+    }
+    // Défilement automatique quand la carte approche du haut ou du bas de l'écran
+    function autoScroll() {
+      if (!drag) return;
+      const edge = 90, barH = document.querySelector('.bottom-bar').offsetHeight;
+      const bottom = window.innerHeight - barH;
+      let dy = 0;
+      if (drag.y < edge) dy = -Math.ceil((edge - drag.y) / 4);
+      else if (drag.y > bottom - edge) dy = Math.ceil((drag.y - (bottom - edge)) / 4);
+      if (dy) { window.scrollBy(0, dy); move(drag.y); }
+      raf = requestAnimationFrame(autoScroll);
+    }
+    function drop() {
+      cancelAnimationFrame(raf);
+      const { card, ph } = drag;
+      ph.replaceWith(card);
+      card.classList.remove('drag-lift');
+      card.style.width = card.style.left = card.style.top = '';
+      $('detail').style.display = '';
+      document.body.classList.remove('reordering');
+      $('reorder-tip').hidden = true;
+      drag = null;
+      lastDropAt = Date.now();
+      ui.cardOrder = cardEls().map(c => c.dataset.key);
+      saveUI();
+      keepDetailUnderChart();
+      requestAnimationFrame(() => { if (chart) chart.resize(); if (bilanChart) bilanChart.resize(); });
+    }
+
+    // ----- Tactile -----
+    document.addEventListener('touchstart', e => {
+      if (e.touches.length !== 1 || drag) return cancelPress();
+      const card = e.target.closest('#wrap > .card[data-key]');
+      if (!card || e.target.closest(NO_START)) return;
+      start(card, e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    document.addEventListener('touchmove', e => {
+      const t = e.touches[0];
+      if (drag) { e.preventDefault(); move(t.clientY); return; }
+      if (press && Math.hypot(t.clientX - press.x, t.clientY - press.y) > MOVE_TOLERANCE) cancelPress();
+    }, { passive: false });
+    const touchEnd = () => { if (drag) drop(); else cancelPress(); };
+    document.addEventListener('touchend', touchEnd);
+    document.addEventListener('touchcancel', touchEnd);
+    // Pas de menu contextuel pendant l'appui long
+    document.addEventListener('contextmenu', e => { if (e.target.closest('#wrap > .card[data-key]') && (press || drag)) e.preventDefault(); });
+
+    // ----- Souris (ordinateur) -----
+    document.addEventListener('mousedown', e => {
+      if (e.button !== 0 || drag) return;
+      const card = e.target.closest('#wrap > .card[data-key]');
+      if (!card || e.target.closest(NO_START)) return;
+      start(card, e.clientX, e.clientY);
+    });
+    document.addEventListener('mousemove', e => {
+      if (drag) { e.preventDefault(); move(e.clientY); return; }
+      if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > MOVE_TOLERANCE) cancelPress();
+    });
+    document.addEventListener('mouseup', () => { if (drag) drop(); else cancelPress(); });
+  })();
+
+  // Un clic qui suit un déplacement ne doit pas replier la carte
+  document.addEventListener('click', e => {
+    if (document.body.classList.contains('reordering') || Date.now() - lastDropAt < 500) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+
+  // ---------- Préférences : cartes affichées ----------
+  const CARD_NAMES = {
+    kpi: ['Bilan et chiffres clés', 'Bilan, tournois, place, ITM'],
+    compare: ['Ce mois-ci', 'Comparaison avec le mois dernier'],
+    progression: ['Progression', 'Graphique des places'],
+    bilan: ['Bilan cumulé', 'Courbe de ton argent'],
+    field: ['Par taille de field', 'Petits, moyens, gros tournois'],
+    dist: ['Répartition des places', 'Histogramme par tranche'],
+    series: ['Séries', 'Séries ITM et derniers résultats']
+  };
+  function renderPref() {
+    // Dans l'ordre actuel des cartes sur la page
+    $('pref-list').innerHTML = cardEls().map(c => {
+      const k = c.dataset.key, [name, sub] = CARD_NAMES[k] || [k, ''];
+      return `<label class="pref-row">
+        <span>${name}<small>${sub}</small></span>
+        <input type="checkbox" data-card="${k}" ${ui.hiddenCards[k] ? '' : 'checked'}>
+        <span class="switch" aria-hidden="true"></span>
+      </label>`;
+    }).join('');
+  }
+  function openPref() {
+    ui.prefOpen = true; saveUI();
+    renderPref();
+    lockScroll();
+    $('pref-modal').hidden = false;
+  }
+  function closePref() {
+    $('pref-modal').hidden = true;
+    ui.prefOpen = false;
+    if (!anyModalOpen()) unlockScroll();
+    saveUI();
+    requestAnimationFrame(() => { if (chart) chart.resize(); if (bilanChart) bilanChart.resize(); });
+  }
+  $('pref-btn').addEventListener('click', openPref);
+  $('all-hidden-btn').addEventListener('click', openPref);
+  $('p-close').addEventListener('click', closePref);
+  $('pref-modal').addEventListener('click', e => { if (e.target === $('pref-modal')) closePref(); });
+  $('pref-list').addEventListener('change', e => {
+    const k = e.target.dataset.card;
+    if (!k) return;
+    if (e.target.checked) delete ui.hiddenCards[k]; else ui.hiddenCards[k] = true;
+    if (k === 'progression' && !e.target.checked) ui.selectedId = null;
+    saveUI();
+    render(true);
+  });
+  $('p-all').addEventListener('click', () => { ui.hiddenCards = {}; saveUI(); renderPref(); render(true); });
+  $('p-order').addEventListener('click', () => {
+    ui.cardOrder = null; saveUI();
+    const wrap = $('wrap');
+    ['kpi', 'compare', 'progression', 'bilan', 'field', 'dist', 'series'].forEach(k => {
+      const c = document.querySelector(`#wrap > .card[data-key="${k}"]`);
+      if (c) wrap.appendChild(c);
+    });
+    keepDetailUnderChart();
+    renderPref();
+  });
+
+  // ---------- Période du graphique ----------
+  document.querySelectorAll('.per-btn').forEach(b => b.addEventListener('click', () => {
+    ui.period = b.dataset.period;
+    ui.view = { count: null, end: null };   // nouvelle période : on repart d'une vue complète
+    saveUI();
+    render();
+  }));
+
+  // ---------- Répartition des places finales ----------
+  const PLACE_BUCKETS = [
+    { label: '≤1', max: 1 },
+    { label: '1-5', max: 5 },
+    { label: '5-10', max: 10 },
+    { label: '10-15', max: 15 },
+    { label: '15-30', max: 30 },
+    { label: '30-50', max: 50 },
+    { label: '50+', max: 100 }
+  ];
+  function renderDistribution(list) {
+    const counts = PLACE_BUCKETS.map(() => 0);
+    const paid = PLACE_BUCKETS.map(() => 0);
+    list.forEach(t => {
+      const r = ratio(t);
+      const i = PLACE_BUCKETS.findIndex(b => r <= b.max);
+      const k = i < 0 ? PLACE_BUCKETS.length - 1 : i;
+      counts[k]++;
+      if (itmOf(t)) paid[k]++;
+    });
+    const maxC = Math.max(1, ...counts);
+    const n = list.length;
+    // Histogramme vertical : vert = ITM (en bas), doré = hors ITM (au-dessus)
+    $('dist').innerHTML = PLACE_BUCKETS.map((b, i) => {
+      const h = counts[i] / maxC * 100;
+      const hPaid = counts[i] ? h * paid[i] / counts[i] : 0;
+      const pct = n ? Math.round(counts[i] / n * 100) : 0;
+      return `<div class="h-col" title="${counts[i]} tournoi${counts[i] > 1 ? 's' : ''} (${pct} %) · dont ${paid[i]} ITM">
+        <div class="h-n${counts[i] ? '' : ' zero'}">${counts[i]}</div>
+        <div class="h-stack" style="height:calc((100% - 18px) * ${(h / 100).toFixed(3)})">
+          ${h - hPaid > 0 ? `<div class="h-seg out" style="flex:${h - hPaid}"></div>` : ''}
+          ${hPaid > 0 ? `<div class="h-seg in" style="flex:${hPaid}"></div>` : ''}
+        </div>
+      </div>`;
+    }).join('') + PLACE_BUCKETS.map(b => `<div class="h-lab">${b.label}</div>`).join('');
+    const top10 = list.filter(t => ratio(t) <= 10).length;
+    $('dist-hint').innerHTML = n
+      ? `<span class="h-key in"></span>ITM <span class="h-key out"></span>hors ITM · places en %&nbsp;du field<br><b>${Math.round(top10 / n * 100)}&nbsp;%</b> dans le top&nbsp;10&nbsp;%`
+      : 'Ajoute des tournois pour voir la répartition de tes places.';
   }
 
   // ---------- Zoom et défilement du graphique ----------
@@ -1061,7 +1712,7 @@
   }
   // Applique une nouvelle fenêtre ; end = null signifie « collé aux derniers tournois »
   function setView(count, end, quick) {
-    const total = lastChartList.length;
+    const total = periodList(lastChartList).length;
     if (!total) return;
     count = Math.max(Math.min(MIN_VISIBLE, total), Math.min(total, Math.round(count)));
     end = Math.max(count - 1, Math.min(total - 1, Math.round(end)));
@@ -1069,7 +1720,7 @@
     saveUI();
     renderChart(lastChartList, quick);
   }
-  function currentWindow() { return computeWindow(lastChartList); }
+  function currentWindow() { return computeWindow(periodList(lastChartList)); }
 
   $('z-in').addEventListener('click', () => { const w = currentWindow(); const c = Math.max(MIN_VISIBLE, Math.round(w.count / 1.6)); setView(c, w.end - Math.round((w.count - c) / 2)); });
   $('z-out').addEventListener('click', () => { const w = currentWindow(); const c = Math.round(w.count * 1.6); setView(c, w.end + Math.round((c - w.count) / 2)); });
@@ -1128,19 +1779,51 @@
     }, { passive: false });
   })();
 
+  // Recherche insensible aux accents et à la casse
+  const norm = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  // Surligne le texte cherché (le texte est échappé avant)
+  function hl(text) {
+    const q = ui.listSearch.trim();
+    const safe = esc(text);
+    if (!q) return safe;
+    const n = norm(text), i = n.indexOf(norm(q));
+    if (i < 0) return safe;
+    return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>' + esc(text.slice(i + q.length));
+  }
+  const SORTS = {
+    recent: (a, b) => b.date.localeCompare(a.date) || b.created - a.created,
+    old: (a, b) => a.date.localeCompare(b.date) || a.created - b.created,
+    place: (a, b) => ratio(a) - ratio(b),
+    net: (a, b) => netOf(b) - netOf(a),
+    netlow: (a, b) => netOf(a) - netOf(b),
+    field: (a, b) => b.players - a.players
+  };
+
   function renderList(list) {
     const ul = $('list');
     ul.innerHTML = '';
-    const rows = list.slice().reverse(); // plus récent en haut
+    $('l-search').value !== ui.listSearch && ($('l-search').value = ui.listSearch);
+    $('l-sort').value = SORTS[ui.listSort] ? ui.listSort : 'recent';
+    $('l-clear').hidden = !ui.listSearch;
+    // Mots cherchés dans : nom, plateforme, date (jj/mm/aaaa et nom du mois), « itm »
+    const words = norm(ui.listSearch).split(/\s+/).filter(Boolean);
+    const matches = (t) => {
+      if (!words.length) return true;
+      const hay = norm([t.name, t.platform, fmtDate(t.date), new Date(t.date + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }), itmOf(t) ? 'itm' : '', buyinOf(t) ? '' : 'freeroll'].join(' '));
+      return words.every(w => hay.includes(w));
+    };
+    const rows = list.filter(matches).sort(SORTS[ui.listSort] || SORTS.recent);
+    $('l-count').textContent = words.length ? `${rows.length} résultat${rows.length > 1 ? 's' : ''} sur ${list.length}` : '';
     $('list-empty').hidden = rows.length > 0;
+    $('list-empty').textContent = list.length ? 'Aucun tournoi ne correspond à ta recherche.' : 'Aucun tournoi enregistré.';
     rows.forEach(t => {
       const n = netOf(t);
       const li = document.createElement('li');
       li.className = 'item';
       li.innerHTML = `
         <div>
-          <div class="top">${titleHtml(t)}</div>
-          <div class="meta">${t.name ? t.platform + ' · ' : ''}${fmtDate(t.date)}</div>
+          <div class="top"><span class="dot" style="background:${color(t.platform)}"></span><span class="t-name">${hl(t.name || t.platform)}</span>${itmOf(t) ? ' <span class="badge">ITM</span>' : ''}</div>
+          <div class="meta">${t.name ? hl(t.platform) + ' · ' : ''}${hl(fmtDate(t.date))}</div>
           <div class="meta">${fmtInt(t.place)} / ${fmtInt(t.players)}${buyinOf(t) ? ' · BI ' + fmtEur(buyinOf(t)) : ''}</div>
         </div>
         <div class="right">
@@ -1162,7 +1845,7 @@
   function select(id, scroll) {
     ui.selectedId = id;
     // Fait défiler le graphique si le tournoi choisi est hors de la zone affichée
-    const all = visible(), i = all.findIndex(t => t.id === id);
+    const all = periodList(visible()), i = all.findIndex(t => t.id === id);
     if (i >= 0) {
       const w = computeWindow(all);
       if (i < w.start || i > w.end) {
@@ -1187,12 +1870,14 @@
     if (r.top - delta < 12) delta = r.top - 12;                       // sans cacher son haut
     if (Math.abs(delta) > 2) window.scrollBy({ top: delta, behavior: 'smooth' });
   }
-  function renderDetail(list) {
+  function renderDetail(fullList) {
+    const inPeriod = periodList(fullList);
+    const list = inPeriod.some(t => t.id === ui.selectedId) ? inPeriod : fullList;
     const i = list.findIndex(t => t.id === ui.selectedId);
     const card = $('detail');
     if (i < 0) { card.hidden = true; $('chart-hint').hidden = false; return; }
     const t = list[i];
-    const avg = list.reduce((s, x) => s + ratio(x), 0) / list.length;
+    const avg = fullList.reduce((s, x) => s + ratio(x), 0) / fullList.length;
     const diff = avg - ratio(t);
     card.hidden = false;
     $('chart-hint').hidden = true;
@@ -1277,7 +1962,7 @@
     document.body.classList.add('modal-open');
   }
   function anyModalOpen() {
-    return ['modal', 'list-modal', 'backup-modal'].some(id => !$(id).hidden);
+    return ['modal', 'list-modal', 'backup-modal', 'pref-modal'].some(id => !$(id).hidden);
   }
   function unlockScroll() {
     if (lockedScroll === null) return;
@@ -1331,6 +2016,10 @@
     saveUI();
   }
   $('list-btn').addEventListener('click', openList);
+  $('l-search').addEventListener('input', e => { ui.listSearch = e.target.value; saveUI(); renderList(visible()); });
+  $('l-search').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });   // ferme le clavier
+  $('l-clear').addEventListener('click', () => { ui.listSearch = ''; saveUI(); renderList(visible()); $('l-search').focus(); });
+  $('l-sort').addEventListener('change', e => { ui.listSort = e.target.value; saveUI(); renderList(visible()); });
   $('l-close').addEventListener('click', closeList);
   $('list-modal').addEventListener('click', e => { if (e.target === $('list-modal')) closeList(); });
   function lastPlatform() {
@@ -1396,6 +2085,7 @@
     if (!$('sheet').hidden) closeSheet();
     else if (!$('modal').hidden) closeModal();
     else if (!$('backup-modal').hidden) closeBackup();
+    else if (!$('pref-modal').hidden) closePref();
     else if (!$('list-modal').hidden) closeList();
   });
 
@@ -1471,7 +2161,12 @@
   const markExported = () => { ui.lastExport = Date.now(); saveUI(); renderBackupInfo(); };
 
   // ---------- Export / import ----------
-  const backupJson = () => JSON.stringify(tournaments, null, 2);
+  const PREF_KEYS = ['hiddenCards', 'cardOrder', 'collapsed', 'period', 'filter', 'listSort'];
+  const backupJson = () => JSON.stringify({
+    app: 'PokerEvo', version: 2, exportedAt: new Date().toISOString(),
+    tournaments,
+    preferences: Object.fromEntries(PREF_KEYS.map(k => [k, ui[k]]))
+  }, null, 2);
   function backupMsg(ok, err) {
     $('b-status').textContent = ok || '';
     $('import-error').textContent = err || '';
@@ -1544,8 +2239,10 @@
     }
   });
 
+  let importedPrefs = null;
   function parseBackup(text) {
     let data = JSON.parse(String(text).trim());
+    importedPrefs = data && !Array.isArray(data) && isObj(data.preferences) ? data.preferences : null;
     if (data && !Array.isArray(data) && Array.isArray(data.tournaments)) data = data.tournaments;
     if (!Array.isArray(data)) throw new Error();
     const seen = new Set();
@@ -1571,11 +2268,23 @@
     backupMsg();
     let clean;
     try { clean = parseBackup(text); }
-    catch (err) { return backupMsg('', 'Sauvegarde invalide : le texte doit commencer par [ et finir par ].'); }
+    catch (err) { return backupMsg('', 'Sauvegarde invalide : colle le texte complet du fichier, sans le modifier.'); }
     if (!clean.length) return backupMsg('', 'Aucun tournoi valide trouvé dans cette sauvegarde.');
     openSheet(`Importer ${clean.length} tournoi(s) ? Les données actuelles seront remplacées.`, 'Importer', () => {
       tournaments = clean; saveData();
-      ui.selectedId = null; bilanSelId = null; ui.view = { count: null, end: null }; saveUI();
+      ui.selectedId = null; bilanSelId = null; ui.bilanSelId = null; ui.view = { count: null, end: null };
+      // Préférences d'affichage présentes dans la sauvegarde (cartes masquées, ordre, replis, période…)
+      if (importedPrefs) {
+        const p = importedPrefs;
+        if (isObj(p.hiddenCards)) ui.hiddenCards = p.hiddenCards;
+        if (isObj(p.collapsed)) ui.collapsed = p.collapsed;
+        if (p.cardOrder === null || Array.isArray(p.cardOrder)) ui.cardOrder = p.cardOrder;
+        if (['30', '90', 'all'].includes(p.period)) ui.period = p.period;
+        if (['all', 'Winamax', 'PokerStars'].includes(p.filter)) ui.filter = p.filter;
+        if (typeof p.listSort === 'string') ui.listSort = p.listSort;
+        applyCardOrder();
+      }
+      saveUI();
       render();
       $('paste-text').value = ''; $('paste-zone').hidden = true;
       renderBackupInfo();
@@ -1617,6 +2326,7 @@
   }
 
   // ---------- Démarrage : tout restaurer ----------
+  applyCardOrder();
   render();
   const restore = () => {
     if (lockedScroll !== null) { lockedScroll = ui.scrollY || 0; document.body.style.top = -lockedScroll + 'px'; }
@@ -1627,6 +2337,7 @@
     // Rouvre les fenêtres qui étaient ouvertes, avec la saisie en cours
     if (ui.listOpen) openList();
     if (ui.backupOpen) openBackup();
+    if (ui.prefOpen) openPref();
     if (ui.modal) openModal(ui.modal.mode, ui.modal.id, ui.modal.values);
   });
   window.addEventListener('load', restore);
