@@ -177,6 +177,21 @@
   .cmp2 .k-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .c2-p { color: var(--muted); font-size: .68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+  /* Suggestions de noms dans la saisie */
+  .name-sugg { display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; margin-top: -6px; padding-bottom: 2px; }
+  .name-sugg::-webkit-scrollbar { display: none; }
+  .name-sugg[hidden] { display: none; }
+  .sugg-chip {
+    -webkit-appearance: none; appearance: none; flex: none;
+    display: inline-flex; align-items: center; gap: 6px;
+    min-height: 34px; padding: 0 12px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text);
+    font: inherit; font-size: .85rem; cursor: pointer; white-space: nowrap;
+  }
+  .sugg-chip .dot { width: 7px; height: 7px; }
+  .sugg-chip small { color: var(--muted); font-size: .72rem; }
+  .sugg-chip b { font-weight: 700; }
+
   /* Chiffres clés */
   .kpi-card { padding: 14px 16px 12px; }
   .k-label { color: var(--text-2); font-size: .74rem; }
@@ -829,8 +844,9 @@
     <div class="modal-sub" id="m-sub"></div>
     <form id="m-form" novalidate autocomplete="off">
       <label class="full">Nom du tournoi <span class="opt">(facultatif)</span>
-        <input type="text" id="m-name" maxlength="60" placeholder="ex. Sunday Million, Freeroll…" autocapitalize="sentences" enterkeyhint="next">
+        <input type="text" id="m-name" maxlength="60" placeholder="ex. Sunday Million, Freeroll…" autocapitalize="sentences" autocomplete="off" enterkeyhint="next">
       </label>
+      <div class="name-sugg full" id="name-sugg" hidden></div>
       <label>Date
         <input type="date" id="m-date" required>
       </label>
@@ -1904,6 +1920,60 @@
   $('d-edit').addEventListener('click', () => ui.selectedId && openModal('edit', ui.selectedId));
 
   // ---------- Modale (ajout / modification) ----------
+  // ---------- Suggestions de noms ----------
+  // Noms déjà utilisés, classés par nombre d'utilisations puis par date ; on garde le dernier tournoi de chaque nom
+  function knownNames() {
+    const map = new Map();
+    tournaments.forEach(t => {
+      const name = (t.name || '').trim();
+      if (!name) return;
+      const k = norm(name);
+      const e = map.get(k) || { name, count: 0, last: null };
+      e.count++;
+      if (!e.last || t.date > e.last.date || (t.date === e.last.date && t.created > e.last.created)) { e.last = t; e.name = name; }
+      map.set(k, e);
+    });
+    return [...map.values()].sort((a, b) => b.count - a.count || b.last.date.localeCompare(a.last.date));
+  }
+  function renderNameSugg() {
+    const box = $('name-sugg');
+    const typed = $('m-name').value.trim();
+    const q = norm(typed);
+    let list = knownNames();
+    // Déjà le nom exact : pas besoin de suggérer
+    if (q && list.some(e => norm(e.name) === q)) list = [];
+    else if (q) list = list.filter(e => norm(e.name).includes(q))
+      .sort((a, b) => (norm(b.name).startsWith(q) - norm(a.name).startsWith(q)) || b.count - a.count);
+    list = list.slice(0, 8);
+    box.hidden = !list.length || document.activeElement !== $('m-name');
+    box.innerHTML = list.map((e, i) => {
+      const n = e.name, j = q ? norm(n).indexOf(q) : -1;
+      const label = j >= 0 ? esc(n.slice(0, j)) + '<b>' + esc(n.slice(j, j + typed.length)) + '</b>' + esc(n.slice(j + typed.length)) : esc(n);
+      return `<button type="button" class="sugg-chip" data-i="${i}"><span class="dot" style="background:${color(e.last.platform)}"></span><span>${label}</span>${e.count > 1 ? `<small>×${e.count}</small>` : ''}</button>`;
+    }).join('');
+    box._list = list;
+  }
+  $('m-name').addEventListener('input', renderNameSugg);
+  $('m-name').addEventListener('focus', renderNameSugg);
+  // Laisse le temps au toucher sur une suggestion avant de la cacher
+  $('m-name').addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== $('m-name')) $('name-sugg').hidden = true; }, 150));
+  $('name-sugg').addEventListener('pointerdown', e => e.preventDefault());   // garde le clavier ouvert
+  $('name-sugg').addEventListener('mousedown', e => e.preventDefault());
+  $('name-sugg').addEventListener('click', e => {
+    const chip = e.target.closest('.sugg-chip');
+    if (!chip) return;
+    const entry = $('name-sugg')._list[+chip.dataset.i];
+    $('m-name').value = entry.name;
+    // Nouveau tournoi : on reprend la plateforme et le buy-in du dernier tournoi de ce nom (si le buy-in est encore vide)
+    if (ui.modal && ui.modal.mode === 'add') {
+      $('m-platform').value = entry.last.platform;
+      if (!$('m-buyin').value.trim() && buyinOf(entry.last)) $('m-buyin').value = String(buyinOf(entry.last)).replace('.', ',');
+    }
+    ['m-name', 'm-platform', 'm-buyin'].forEach(id => $(id).dispatchEvent(new Event('change')));
+    $('name-sugg').hidden = true;
+    $('m-players').focus();   // la date est déjà celle du jour : on passe au nombre de joueurs
+  });
+
   const FIELDS = ['m-name', 'm-date', 'm-platform', 'm-players', 'm-place', 'm-buyin', 'm-gain', 'm-itm'];
 
   function fillFields(v) {
