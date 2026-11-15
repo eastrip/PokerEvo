@@ -5,11 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="PokerEvo">
 <meta name="format-detection" content="telephone=no">
-<meta name="theme-color" content="#f4f4f2" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#000000">
 <title>PokerEvo</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <!-- Police du titre : Rye (style saloon / table de poker), Google Fonts -->
@@ -78,8 +77,24 @@
     margin: 4px 0 0; letter-spacing: .02em;
   }
 
+  /* Image de fond (fichier IMG_2265.jpeg à côté de index.html sur GitHub).
+     Calque fixe : « background-attachment: fixed » ne fonctionne pas sur iPhone. */
+  html { background-color: #050505; }
+  body { background: transparent !important; }
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,.35) 0%, rgba(0,0,0,.15) 35%, rgba(0,0,0,.55) 100%),
+      url("IMG_2265.jpeg") center / cover no-repeat;
+  }
+  /* En-tête directement sur la photo : texte clair */
+  header h1 { color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,.6); }
+  .all-hidden { color: var(--text-2); }
+
   .card {
-    background: var(--surface);
+    background: color-mix(in srgb, var(--surface) 90%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(1.1);
+    backdrop-filter: blur(14px) saturate(1.1);
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 16px;
@@ -109,8 +124,9 @@
   .chip .dot { width: 8px; height: 8px; }
   .save-btn {
     -webkit-appearance: none; appearance: none; flex: none;
-    width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--border);
-    background: var(--surface); color: var(--text);
+    width: 44px; height: 44px; border-radius: 12px; border: 1px solid rgba(255,255,255,.22);
+    background: rgba(255,255,255,.12); color: #fff;
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
     display: flex; align-items: center; justify-content: center; cursor: pointer;
   }
   .save-btn svg { width: 22px; height: 22px; }
@@ -324,7 +340,7 @@
     display: grid; grid-template-columns: 1fr 1.35fr; gap: 10px;
     max-width: 640px; margin: 0 auto;
     padding: 10px calc(14px + var(--safe-right)) calc(12px + var(--safe-bottom)) calc(14px + var(--safe-left));
-    background: linear-gradient(to top, var(--bg) 70%, transparent);
+    background: linear-gradient(to top, rgba(0,0,0,.55) 55%, transparent);
   }
   .bar-btn {
     -webkit-appearance: none; appearance: none;
