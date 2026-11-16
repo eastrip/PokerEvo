@@ -251,7 +251,8 @@
   #z-range:disabled { opacity: .35; }
   #z-range:focus { outline: none; }
   .roll-line { width: 22px; height: 0; border-top: 2px dotted var(--rolling); display: inline-block; }
-  .legend #lg-roll[hidden] { display: none; }
+  .legend #lg-roll[hidden], .legend #lg-zone[hidden] { display: none; }
+  .zone-sw { width: 14px; height: 10px; border-radius: 2px; display: inline-block; background: color-mix(in srgb, var(--text) 12%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--text) 30%, transparent); }
   [data-key="bilan"] .card-head { margin-bottom: 4px; }
   .bilan-box { position: relative; height: 140px; touch-action: pan-y; }
   .bilan-box .empty { padding: 40px 10px; }
@@ -382,6 +383,8 @@
   .full { grid-column: 1 / -1; }
   .opt { color: var(--muted); }
   .itm-note { color: var(--muted); font-size: .78rem; margin-top: -6px; }
+  .count-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .count-row label { white-space: nowrap; }
   .money-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
   .itm-col { display: flex; flex-direction: column; gap: 5px; font-size: .8rem; color: var(--text-2); }
   .itm-toggle {
@@ -595,6 +598,7 @@
     background: var(--bg); border-radius: 10px; padding: 10px;
   }
   .preview strong { color: var(--text); font-size: 1.1rem; }
+  .preview .pv-paid { display: block; font-size: .8rem; margin-top: 4px; color: var(--text-2); }
   .sheet {
     padding: 20px calc(16px + var(--safe-right)) calc(16px + var(--safe-bottom)) calc(16px + var(--safe-left));
   }
@@ -672,6 +676,7 @@
     <div class="legend">
       <span><span class="dash"></span>Moyenne</span>
       <span id="lg-roll"><span class="roll-line"></span>10 derniers</span>
+      <span id="lg-zone" hidden><span class="zone-sw"></span>Zone ITM</span>
       <span><span class="dot" style="background:var(--text-2)"></span>ITM</span>
       <span><span class="hollow"></span>Hors ITM</span>
       <span><span class="star-lg">★</span>Avec buy-in</span>
@@ -872,12 +877,17 @@
           <option value="PokerStars">PokerStars</option>
         </select>
       </label>
-      <label>Joueurs au total
-        <input type="number" id="m-players" min="2" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="5418" required>
-      </label>
-      <label>Ma place finale
-        <input type="number" id="m-place" min="1" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="87" required>
-      </label>
+      <div class="count-row full">
+        <label>Joueurs
+          <input type="number" id="m-players" min="2" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="5418" required>
+        </label>
+        <label>Joueurs payés
+          <input type="number" id="m-paid" min="1" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="800">
+        </label>
+        <label>Ma place
+          <input type="number" id="m-place" min="1" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="87" required>
+        </label>
+      </div>
       <div class="money-row full">
         <label>Buy-in
           <span class="field-wrap">
@@ -892,11 +902,11 @@
           </span>
         </label>
         <div class="itm-col">
-          <span class="itm-label">Payé</span>
+          <span class="itm-label">Statut</span>
           <button type="button" class="itm-toggle" id="m-itm" aria-pressed="false" disabled>ITM</button>
         </div>
       </div>
-      <div class="itm-note full">ITM coché automatiquement avec un gain. Décoche-le pour un gain de bounty sans finir dans les places payées.</div>
+      <div class="itm-note full">ITM coché automatiquement avec un gain. Si tu indiques les joueurs payés, il se coche ou se décoche selon ta place (gain de bounty hors des places payées = non ITM).</div>
       <div class="preview full" id="m-preview"></div>
       <div class="error full" id="m-error"></div>
       <button type="submit" class="btn primary full" id="m-submit">Ajouter le tournoi</button>
@@ -1091,6 +1101,7 @@
     });
     const showRolling = allValues.length >= 3;
     $('lg-roll').hidden = !showRolling;
+    $('lg-zone').hidden = !list.some(t => t.paid);
 
     // Période choisie (la moyenne glissante est calculée avant, sur tout l'historique)
     const p = periodStart(list);
@@ -1197,14 +1208,46 @@
       }
     };
 
+    // Zone ITM : pour chaque tournoi dont on connaît les joueurs payés, une bande grise discrète
+    // du haut du graphique (0 %) jusqu'à la part de joueurs payés (ex. 800 / 5 404 = 15 %)
+    const zones = list.map(t => t.paid ? Math.min(100, t.paid / t.players * 100) : null);
+    // Gris neutre très léger (s'adapte au mode clair / sombre) pour rester discret
+    options.plugins.itmZone = { zones, fill: css('--text') + '12', edge: css('--text') + '38' };
     if (chart) {
       chart.data = data;
       chart.options = options;
       chart.update(quick ? 'none' : undefined);
     } else {
-      chart = new Chart(canvas, { type: 'line', data, options });
+      chart = new Chart(canvas, { type: 'line', data, options, plugins: [ITM_ZONE_PLUGIN] });
     }
   }
+
+  // ---------- Zone ITM dessinée sous les courbes ----------
+  const ITM_ZONE_PLUGIN = {
+    id: 'itmZone',
+    beforeDatasetsDraw(ch, _args, opts) {
+      const zones = (opts && opts.zones) || [];
+      if (!zones.some(z => z != null)) return;
+      const { ctx, chartArea: a, scales: { x, y } } = ch;
+      const n = zones.length;
+      const step = n > 1 ? Math.abs(x.getPixelForValue(1) - x.getPixelForValue(0)) : (a.right - a.left);
+      const top = y.getPixelForValue(0);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(a.left, a.top, a.right - a.left, a.bottom - a.top); ctx.clip();
+      zones.forEach((z, i) => {
+        if (z == null) return;
+        const cx = x.getPixelForValue(i);
+        const left = Math.max(a.left, cx - step / 2), right = Math.min(a.right, cx + step / 2);
+        const bottom = y.getPixelForValue(z);
+        ctx.fillStyle = opts.fill;
+        ctx.fillRect(left, Math.min(top, bottom), right - left, Math.abs(bottom - top));
+        // Petit trait au niveau de la limite des places payées
+        ctx.fillStyle = opts.edge;
+        ctx.fillRect(left, bottom - 0.5, right - left, 1);
+      });
+      ctx.restore();
+    }
+  };
 
   // ---------- Étoiles pour les tournois payants ----------
   // Dessinées en haute résolution puis affichées à la taille voulue pour rester nettes sur iPhone.
@@ -1921,7 +1964,8 @@
     $('d-ratio').textContent = 'Top ' + fmtPct(ratio(t));
     $('d-gain').textContent = fmtNet(netOf(t));
     $('d-gain').className = 'v ' + signCls(netOf(t));
-    $('d-money').innerHTML = `Buy-in ${fmtEur(buyinOf(t))} · Gain <strong class="pos">${fmtEur(gainOf(t))}</strong>`;
+    $('d-money').innerHTML = `Buy-in ${fmtEur(buyinOf(t))} · Gain <strong class="pos">${fmtEur(gainOf(t))}</strong>` +
+      (t.paid ? '<br>' + paidInfoHtml(t.players, t.place, t.paid, '') : '');
     $('d-compare').innerHTML = list.length < 2 || Math.abs(diff) < 0.05
       ? `Dans ta moyenne (Top ${fmtPct(avg)}).`
       : `<strong class="${diff > 0 ? 'good' : 'bad'}">${diff > 0 ? '▲' : '▼'} ${Math.abs(diff).toFixed(1).replace('.', ',')} pts</strong> ${diff > 0 ? 'mieux' : 'moins bien'} que ta moyenne (Top ${fmtPct(avg)}).`;
@@ -1990,7 +2034,7 @@
     $('m-players').focus();   // la date est déjà celle du jour : on passe au nombre de joueurs
   });
 
-  const FIELDS = ['m-name', 'm-date', 'm-platform', 'm-players', 'm-place', 'm-buyin', 'm-gain', 'm-itm'];
+  const FIELDS = ['m-name', 'm-date', 'm-platform', 'm-players', 'm-paid', 'm-place', 'm-buyin', 'm-gain', 'm-itm'];
 
   function fillFields(v) {
     $('m-name').value = v.name || '';
@@ -1998,6 +2042,7 @@
     $('m-platform').value = v.platform || 'Winamax';
     $('m-players').value = v.players || '';
     $('m-place').value = v.place || '';
+    $('m-paid').value = v.paid || '';
     const money = (x) => x === undefined || x === null || x === 0 || x === '' ? '' : String(x).replace('.', ',');
     $('m-buyin').value = money(v.buyin);
     $('m-gain').value = money(v.gain);
@@ -2012,6 +2057,7 @@
       platform: $('m-platform').value,
       players: $('m-players').value,
       place: $('m-place').value,
+      paid: $('m-paid').value,
       buyin: $('m-buyin').value,
       gain: $('m-gain').value,
       itm: $('m-itm').getAttribute('aria-pressed') === 'true'
@@ -2022,13 +2068,17 @@
     const place = /^\d+$/.test(String(v.place).trim()) ? +v.place : NaN;
     const gain = parseGain(v.gain);
     const buyin = parseGain(v.buyin);
+    const paidTxt = String(v.paid == null ? '' : v.paid).trim();
+    const paid = paidTxt === '' ? 0 : /^\d+$/.test(paidTxt) ? +paidTxt : NaN;
     if (!v.date) return { error: 'Indique la date du tournoi.' };
     if (!players || players < 2) return { error: 'Le nombre de joueurs doit être au moins 2.' };
     if (!place || place < 1) return { error: 'La place finale doit être au moins 1.' };
     if (place > players) return { error: 'La place ne peut pas dépasser le nombre de joueurs.' };
+    if (isNaN(paid) || (paidTxt !== '' && paid < 1)) return { error: 'Le nombre de joueurs payés doit être un nombre entier (ou vide).' };
+    if (paid > players) return { error: 'Il ne peut pas y avoir plus de joueurs payés que de joueurs.' };
     if (isNaN(buyin) || buyin < 0) return { error: 'Le buy-in doit être un montant positif (ex. 10,50).' };
     if (isNaN(gain) || gain < 0) return { error: 'Le gain doit être un montant positif (ex. 125,50).' };
-    return { value: { name: String(v.name || '').trim().slice(0, 60), date: v.date, platform: v.platform, players, place, itm: gain > 0 && !!v.itm, buyin, gain } };
+    return { value: { name: String(v.name || '').trim().slice(0, 60), date: v.date, platform: v.platform, players, place, paid, itm: gain > 0 && !!v.itm, buyin, gain } };
   }
   function updatePreview() {
     const v = readFields();
@@ -2038,7 +2088,18 @@
     const net = isNaN(g) || isNaN(bi) ? null : Math.round((g - bi) * 100) / 100;
     $('m-preview').innerHTML = `Résultat : <strong>${top}</strong>` +
       (net !== null && (g || bi) ? ` · Bilan : <strong class="${signCls(net)}">${fmtNet(net)}</strong>` : '') +
-      (g > 0 && v.itm ? ' <span class="badge">ITM</span>' : '');
+      (g > 0 && v.itm ? ' <span class="badge">ITM</span>' : '') +
+      paidInfoHtml(players, place, parseInt(v.paid, 10), 'pv-paid');
+  }
+  // « 800 payés (14,8 %) · dans les places payées ✓ » ou « · à 12 places de l'ITM »
+  function paidInfoHtml(players, place, paid, cls) {
+    if (!(paid >= 1) || !(players >= 2) || paid > players) return '';
+    let txt = `${fmtInt(paid)} payés (${fmtPct(paid / players * 100)})`;
+    if (place >= 1 && place <= players) {
+      txt += place <= paid ? ' · <b class="pos">dans les places payées ✓</b>'
+        : ` · <b class="neg">à ${fmtInt(place - paid)} place${place - paid > 1 ? 's' : ''} de l'ITM</b>`;
+    }
+    return `<span class="${cls}">${txt}</span>`;
   }
 
   function lockScroll() {
@@ -2125,6 +2186,12 @@
     else if (!had) setItm(true, false);
     $('m-gain').dataset.prev = has ? '1' : '0';
   });
+  // Places payées connues : avec un gain, ITM = place finale ≤ nombre de payés (gain de bounty hors des places → décoché)
+  function autoItmFromPaid() {
+    const paid = parseInt($('m-paid').value, 10), place = parseInt($('m-place').value, 10);
+    if (parseGain($('m-gain').value) > 0 && paid >= 1 && place >= 1) setItm(place <= paid, false);
+  }
+  ['m-paid', 'm-place', 'm-gain'].forEach(id => $(id).addEventListener('input', autoItmFromPaid));
   $('m-itm').addEventListener('click', () => {
     setItm($('m-itm').getAttribute('aria-pressed') !== 'true', false);
     $('m-itm').dispatchEvent(new Event('change'));
@@ -2341,13 +2408,15 @@
       const players = Math.round(+t.players), place = Math.round(+t.place);
       const gain = Math.max(0, Math.round((+t.gain || 0) * 100) / 100);
       const buyin = Math.max(0, Math.round((+t.buyin || 0) * 100) / 100);
+      const paidN = Math.round(+t.paid || 0);
+      const paid = paidN >= 1 && paidN <= players ? paidN : 0;
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(new Date(date + 'T00:00:00'))) return null;
       if (!platform || !(players >= 2) || !(place >= 1) || place > players) return null;
       let id = typeof t.id === 'string' && t.id ? t.id : newId() + i;
       while (seen.has(id)) id = newId() + i;
       seen.add(id);
       return { id, name: typeof t.name === 'string' ? t.name.trim().slice(0, 60) : '', date, platform, players, place,
-               itm: gain > 0 && t.itm !== false, buyin, gain, created: +t.created || Date.now() + i };
+               paid, itm: gain > 0 && t.itm !== false, buyin, gain, created: +t.created || Date.now() + i };
     }).filter(Boolean);
   }
   function askImport(text) {
