@@ -316,6 +316,28 @@
   .f-line.pos b, .f-line.neg b { color: inherit; }
   .f-count { color: var(--muted); font-size: .68rem; margin-top: 3px; white-space: nowrap; }
 
+  /* Profondeur dans l'argent */
+  .dp-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .dp-big { font-size: min(1.45rem, 5.6vw); font-weight: 750; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .dp-big small { font-size: .7rem; font-weight: 600; color: var(--muted); margin-right: 3px; text-transform: uppercase; letter-spacing: .03em; }
+  .dp-side { white-space: nowrap; text-align: right; color: var(--text-2); font-size: .74rem; line-height: 1.45; font-variant-numeric: tabular-nums; }
+  .dp-side b { color: var(--text); font-weight: 650; }
+  .dp-bar { display: flex; height: 12px; border-radius: 6px; overflow: hidden; margin: 10px 0 8px; background: var(--bg); gap: 2px; }
+  .dp-bar > div { min-width: 0; }
+  .dp-bar .deep { background: var(--itm); }
+  .dp-bar .mid { background: color-mix(in srgb, var(--itm) 55%, var(--bg)); }
+  .dp-bar .min { background: var(--rolling); }
+  .dp-legend { display: grid; grid-template-columns: repeat(3, 1fr); font-size: .72rem; color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .dp-legend > div { min-width: 0; }
+  .dp-legend > div:nth-child(2) { text-align: center; }
+  .dp-legend > div:nth-child(3) { text-align: right; }
+  .dp-legend b { display: block; color: var(--text); font-size: .9rem; }
+  .dp-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; }
+  .dp-empty { color: var(--muted); font-size: .82rem; }
+  .dp-sec { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 6px; }
+  .dp-gap { height: 1px; background: var(--border); margin: 12px 0; }
+  .cmp2.bub { grid-template-columns: 1fr 1fr 1fr; }
+
   /* Répartition des places : histogramme vertical compact */
   .dist { display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: 96px auto; column-gap: 6px; font-variant-numeric: tabular-nums; }
   .h-col { display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; min-width: 0; border-bottom: 1px solid var(--border); }
@@ -738,6 +760,15 @@
     <div class="hint" id="field-hint"></div>
   </div>
 
+  <!-- Profondeur dans l'argent -->
+  <div class="card" data-key="depth">
+    <div class="card-head">
+      <h2 class="fold"><span class="chev" aria-hidden="true">›</span>Places payées</h2>
+      <span class="cmp-vs" id="depth-count"></span>
+    </div>
+    <div id="depth"></div>
+  </div>
+
   <!-- Répartition des places finales -->
   <div class="card" data-key="dist">
     <div class="card-head">
@@ -1025,6 +1056,7 @@
     renderCompare(list);
     renderBilan(list, quick);
     renderFieldSizes(list);
+    renderDepth(list);
     renderDistribution(list);
     renderSeries(list);
     applyCollapsed();
@@ -1452,6 +1484,82 @@
       : 'Joue des fields de tailles différentes pour pouvoir comparer.';
   }
 
+  // ---------- Profondeur dans l'argent ----------
+  // Pour les tournois ITM dont on connaît les joueurs payés : position parmi les payés
+  // (place / payés : proche de 0 % = très loin dans l'argent, proche de 100 % = min-cash)
+  const depthOf = (t) => (itmOf(t) && t.paid >= 1 && t.place <= t.paid) ? t.place / t.paid * 100 : null;
+  function depthHtml(list) {
+    const items = list.filter(t => depthOf(t) != null);
+    const itmCount = list.filter(itmOf).length;
+    if (!items.length) {
+      return `<div class="dp-empty">${itmCount
+        ? 'Renseigne les « joueurs payés » de tes tournois ITM (crayon) pour voir jusqu\'où tu vas dans l\'argent.'
+        : 'Aucun tournoi ITM pour le moment.'}</div>`;
+    }
+    const depths = items.map(depthOf);
+    const avg = depths.reduce((a, b) => a + b, 0) / depths.length;
+    const deep = depths.filter(d => d <= 20).length;            // top 20 % des payés
+    const min = depths.filter(d => d > 80).length;              // dernier 20 % des payés = min-cash
+    const mid = depths.length - deep - min;
+    const best = items.reduce((b, t) => depthOf(t) < depthOf(b) ? t : b);
+    const pct = (n) => Math.round(n / depths.length * 100);
+    const avgGain = items.reduce((s, t) => s + gainOf(t), 0) / items.length;
+    return `
+      <div class="dp-sec">Profondeur quand tu es ITM</div>
+      <div class="dp-top">
+        <div><div class="k-label">Moyenne parmi les payés</div>
+          <div class="dp-big"><small>Top</small>${fmtPct(avg)}</div></div>
+        <div class="dp-side">Meilleure <b>${fmtInt(best.place)}e/${fmtInt(best.paid)}</b><br>Gain moyen <b class="pos">${fmtEur(Math.round(avgGain * 100) / 100)}</b></div>
+      </div>
+      <div class="dp-bar">
+        ${deep ? `<div class="deep" style="flex:${deep}"></div>` : ''}
+        ${mid ? `<div class="mid" style="flex:${mid}"></div>` : ''}
+        ${min ? `<div class="min" style="flex:${min}"></div>` : ''}
+      </div>
+      <div class="dp-legend">
+        <div><i style="background:var(--itm)"></i>Profond<b>${deep} <small style="font-weight:400;color:var(--muted)">${pct(deep)} %</small></b></div>
+        <div><i style="background:color-mix(in srgb, var(--itm) 55%, var(--bg))"></i>Milieu<b>${mid} <small style="font-weight:400;color:var(--muted)">${pct(mid)} %</small></b></div>
+        <div><i style="background:var(--rolling)"></i>Min-cash<b>${min} <small style="font-weight:400;color:var(--muted)">${pct(min)} %</small></b></div>
+      </div>
+      <div class="hint">Profond = top&nbsp;20&nbsp;% des payés · Min-cash = dernier&nbsp;20&nbsp;%${itmCount > items.length ? ` · ${itmCount - items.length}&nbsp;ITM sans «&nbsp;joueurs payés&nbsp;»` : ''}</div>`;
+  }
+
+  // ---------- Taux de bulle ----------
+  // Bulle = fini juste après les places payées : entre payés + 1 et payés + 10 % (au moins 1 place)
+  const bubbleZone = (paid) => Math.max(1, Math.ceil(paid * 0.1));
+  const isBubble = (t) => t.paid >= 1 && t.place > t.paid && t.place <= t.paid + bubbleZone(t.paid);
+  function bubbleHtml(list) {
+    const known = list.filter(t => t.paid >= 1 && t.paid <= t.players);
+    if (!known.length) return '';
+    const bub = known.filter(isBubble);
+    const out = known.filter(t => t.place > t.paid);
+    const paidIn = known.filter(t => t.place <= t.paid).length;
+    const closest = out.length ? out.reduce((c, t) => (t.place - t.paid) < (c.place - c.paid) ? t : c) : null;
+    const rate = Math.round(bub.length / known.length * 100);
+    const dm = (d) => { const [, m, j] = d.split('-'); return `${+j}/${+m}`; };
+    return `
+      <div class="dp-sec">Bulle</div>
+      <div class="cmp2 bub">
+        <div><div class="k-label">Taux de bulle</div>
+          <div class="c2-v ${bub.length ? 'neg' : 'pos'}">${rate} %</div>
+          <div class="c2-p">${bub.length} sur ${known.length}</div></div>
+        <div><div class="k-label">Plus près</div>
+          <div class="c2-v">${closest ? 'à ' + fmtInt(closest.place - closest.paid) : '–'}</div>
+          <div class="c2-p">${closest ? (closest.place - closest.paid > 1 ? 'places' : 'place') + ' · ' + dm(closest.date) : 'jamais sorti'}</div></div>
+        <div><div class="k-label">Dans les payés</div>
+          <div class="c2-v pos">${Math.round(paidIn / known.length * 100)} %</div>
+          <div class="c2-p">${paidIn} sur ${known.length}</div></div>
+      </div>
+      <div class="hint">Bulle = sorti dans les 10&nbsp;% de places juste après les payés · ${known.length}&nbsp;tournoi${known.length > 1 ? 's' : ''} avec «&nbsp;joueurs payés&nbsp;»</div>`;
+  }
+  function renderDepth(list) {
+    const items = list.filter(t => depthOf(t) != null);
+    const known = list.filter(t => t.paid >= 1).length;
+    $('depth-count').textContent = known ? `${known} avec payés` : '';
+    const bub = bubbleHtml(list);
+    $('depth').innerHTML = bub + (bub && !items.length && !list.some(itmOf) ? '' : (bub ? '<div class="dp-gap"></div>' : '') + depthHtml(list));
+  }
+
   // ---------- Séries ----------
   function renderSeries(list) {
     if (!list.length) { $('series').innerHTML = '<div class="s-empty">Ajoute des tournois pour voir tes séries.</div>'; return; }
@@ -1531,7 +1639,13 @@
     if (order) {
       const wrap = $('wrap');
       const byKey = Object.fromEntries(cardEls().map(c => [c.dataset.key, c]));
-      const keys = order.filter(k => byKey[k]).concat(Object.keys(byKey).filter(k => !order.includes(k)));
+      const keys = order.filter(k => byKey[k]);
+      // Nouvelle carte absente de l'ordre enregistré : on l'insère à sa place par défaut
+      const DEFAULT = ['kpi', 'compare', 'progression', 'bilan', 'field', 'depth', 'dist', 'series'];
+      Object.keys(byKey).filter(k => !keys.includes(k)).forEach(k => {
+        const prev = DEFAULT.slice(0, DEFAULT.indexOf(k)).reverse().find(p => keys.includes(p));
+        keys.splice(prev ? keys.indexOf(prev) + 1 : 0, 0, k);
+      });
       keys.forEach(k => wrap.appendChild(byKey[k]));   // dans l'ordre enregistré, après l'en-tête
     }
     keepDetailUnderChart();
@@ -1662,6 +1776,7 @@
     bilan: ['Bilan cumulé', 'Courbe de ton argent'],
     field: ['Par taille de field', 'Petits, moyens, gros tournois'],
     dist: ['Répartition des places', 'Histogramme par tranche'],
+    depth: ['Places payées', 'Taux de bulle et profondeur dans l\'argent'],
     series: ['Séries', 'Séries ITM et derniers résultats']
   };
   function renderPref() {
@@ -1704,7 +1819,7 @@
   $('p-order').addEventListener('click', () => {
     ui.cardOrder = null; saveUI();
     const wrap = $('wrap');
-    ['kpi', 'compare', 'progression', 'bilan', 'field', 'dist', 'series'].forEach(k => {
+    ['kpi', 'compare', 'progression', 'bilan', 'field', 'depth', 'dist', 'series'].forEach(k => {
       const c = document.querySelector(`#wrap > .card[data-key="${k}"]`);
       if (c) wrap.appendChild(c);
     });
@@ -1965,7 +2080,9 @@
     $('d-gain').textContent = fmtNet(netOf(t));
     $('d-gain').className = 'v ' + signCls(netOf(t));
     $('d-money').innerHTML = `Buy-in ${fmtEur(buyinOf(t))} · Gain <strong class="pos">${fmtEur(gainOf(t))}</strong>` +
-      (t.paid ? '<br>' + paidInfoHtml(t.players, t.place, t.paid, '') : '');
+      (t.paid ? '<br>' + paidInfoHtml(t.players, t.place, t.paid, '') : '') +
+      (depthOf(t) != null ? ` · top ${fmtPct(depthOf(t))} des payés` : '') +
+      (isBubble(t) ? ' · <b class="neg">bulle</b>' : '');
     $('d-compare').innerHTML = list.length < 2 || Math.abs(diff) < 0.05
       ? `Dans ta moyenne (Top ${fmtPct(avg)}).`
       : `<strong class="${diff > 0 ? 'good' : 'bad'}">${diff > 0 ? '▲' : '▼'} ${Math.abs(diff).toFixed(1).replace('.', ',')} pts</strong> ${diff > 0 ? 'mieux' : 'moins bien'} que ta moyenne (Top ${fmtPct(avg)}).`;
