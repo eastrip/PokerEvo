@@ -92,7 +92,7 @@
   .all-hidden { color: var(--text-2); }
 
   .card {
-    background: color-mix(in srgb, var(--surface) 85%, transparent);
+    background: color-mix(in srgb, var(--surface) 80%, transparent);
     -webkit-backdrop-filter: blur(14px) saturate(1.1);
     backdrop-filter: blur(14px) saturate(1.1);
     border: 1px solid var(--border);
@@ -302,16 +302,16 @@
   .s-empty { color: var(--muted); font-size: .85rem; }
 
   /* Par taille de field : 3 colonnes compactes */
-  .ftable { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-variant-numeric: tabular-nums; }
-  .ftable > div { border-radius: 12px; padding: 9px 10px; background: var(--bg); min-width: 0; }
+  .ftable { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; font-variant-numeric: tabular-nums; }
+  .ftable > div { border-radius: 12px; padding: 8px 7px; background: var(--bg); min-width: 0; }
   .ftable .f-best-col { background: color-mix(in srgb, var(--itm) 12%, var(--bg)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--itm) 45%, transparent); }
   .ftable .f-none { opacity: .55; }
-  .f-name { font-weight: 700; font-size: .88rem; white-space: nowrap; }
+  .f-name { font-weight: 700; font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .f-star { color: var(--itm); font-size: .8rem; }
   .f-range { color: var(--muted); font-size: .68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .f-big { font-size: min(1.25rem, 5vw); font-weight: 750; margin-top: 4px; white-space: nowrap; }
-  .f-big small { font-size: .62rem; font-weight: 600; color: var(--muted); margin-right: 3px; text-transform: uppercase; letter-spacing: .03em; }
-  .f-line { font-size: .78rem; color: var(--text-2); white-space: nowrap; }
+  .f-big { font-size: min(1.15rem, 4.4vw); letter-spacing: -0.01em; font-weight: 750; margin-top: 4px; white-space: nowrap; }
+  .f-big small { font-size: .56rem; font-weight: 600; color: var(--muted); margin-right: 2px; text-transform: uppercase; letter-spacing: .03em; }
+  .f-line { font-size: .74rem; color: var(--text-2); white-space: nowrap; }
   .f-line b { font-weight: 650; }
   .f-line.pos b, .f-line.neg b { color: inherit; }
   .f-count { color: var(--muted); font-size: .68rem; margin-top: 3px; white-space: nowrap; }
@@ -336,7 +336,16 @@
   .dp-empty { color: var(--muted); font-size: .82rem; }
   .dp-sec { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 6px; }
   .dp-gap { height: 1px; background: var(--border); margin: 12px 0; }
-  .cmp2.bub { grid-template-columns: 1fr 1fr 1fr; }
+  .bub-mini {
+    display: flex; align-items: baseline; gap: 6px; margin-top: 10px; padding-top: 9px;
+    border-top: 1px solid var(--border); font-size: .76rem; color: var(--muted); font-variant-numeric: tabular-nums;
+  }
+  .bub-mini b { font-weight: 700; font-size: .82rem; }
+  .bub-mini .bub-n { margin-left: auto; }
+  .bub-leg { color: var(--muted); font-size: .68rem; margin-top: 2px; }
+  .bub-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .bub-v { font-size: min(1.45rem, 5.6vw); font-weight: 750; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .bub-v small { font-size: .74rem; font-weight: 500; color: var(--muted); margin-left: 8px; }
 
   /* Répartition des places : histogramme vertical compact */
   .dist { display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: 96px auto; column-gap: 6px; font-variant-numeric: tabular-nums; }
@@ -394,6 +403,7 @@
     .cmp2 .k-label { font-size: .68rem; }
     .cmp .c-delta { min-width: 0; font-size: .74rem; }
     .cmp .c-now, .cmp .c-delta, .cmp .c-h + .c-h { padding-left: 7px; }
+    .ftable, #stack-table { grid-template-columns: repeat(2, 1fr) !important; }
     .ftable > div { padding: 8px 7px; }
     .k-v { font-size: 1rem; }
     .kpis > div { padding: 0 5px; }
@@ -439,6 +449,8 @@
     color: var(--text);
   }
   .field-wrap input { padding-right: 34px; }
+  .field-wrap .suffix-wide { font-size: .85rem; }
+  #m-stack { padding-right: 70px; }
   input[type="date"] { display: block; text-align: left; }
   input[type="date"]::-webkit-date-and-time-value { text-align: left; }
   select {
@@ -760,6 +772,16 @@
     <div class="hint" id="field-hint"></div>
   </div>
 
+  <!-- Résultats par stack de départ -->
+  <div class="card" data-key="stack">
+    <div class="card-head">
+      <h2 class="fold"><span class="chev" aria-hidden="true">›</span>Par stack de départ</h2>
+      <span class="cmp-vs" id="stack-count"></span>
+    </div>
+    <div class="ftable" id="stack-table"></div>
+    <div class="hint" id="stack-hint"></div>
+  </div>
+
   <!-- Profondeur dans l'argent -->
   <div class="card" data-key="depth">
     <div class="card-head">
@@ -907,6 +929,12 @@
           <option value="Winamax">Winamax</option>
           <option value="PokerStars">PokerStars</option>
         </select>
+      </label>
+      <label class="full">Stack de départ <span class="opt">(facultatif)</span>
+        <span class="field-wrap">
+          <input type="text" id="m-stack" inputmode="numeric" placeholder="20 000" autocomplete="off">
+          <span class="suffix suffix-wide">jetons</span>
+        </span>
       </label>
       <div class="count-row full">
         <label>Joueurs
@@ -1056,6 +1084,7 @@
     renderCompare(list);
     renderBilan(list, quick);
     renderFieldSizes(list);
+    renderStacks(list);
     renderDepth(list);
     renderDistribution(list);
     renderSeries(list);
@@ -1457,9 +1486,10 @@
 
   // ---------- Résultats par taille de field ----------
   const FIELD_SIZES = [
-    { label: 'Petits', sub: '< 1 000', long: 'moins de 1 000', test: n => n < 1000 },
-    { label: 'Moyens', sub: '1 000 – 5 000', long: '1 000 à 5 000', test: n => n >= 1000 && n <= 5000 },
-    { label: 'Gros', sub: '> 5 000', long: 'plus de 5 000', test: n => n > 5000 }
+    { label: 'Petits', sub: '< 1k', long: 'moins de 1 000', test: n => n < 1000 },
+    { label: 'Moyens', sub: '1k – 5k', long: '1 000 à 5 000', test: n => n >= 1000 && n <= 5000 },
+    { label: 'Gros', sub: '5k – 10k', long: '5 000 à 10 000', test: n => n > 5000 && n <= 10000 },
+    { label: 'Très gros', sub: '> 10k', long: 'plus de 10 000', test: n => n > 10000 }
   ];
   function renderFieldSizes(list) {
     const cols = FIELD_SIZES.map(f => ({ f, s: periodStats(list.filter(t => f.test(t.players))) }));
@@ -1472,7 +1502,7 @@
       return `<div class="${best ? 'f-best-col' : ''}${s ? '' : ' f-none'}">
         <div class="f-name">${f.label}${best ? ' <span class="f-star">★</span>' : ''}</div>
         <div class="f-range">${f.sub}</div>
-        <div class="f-big">${s ? '<small>Top</small>' + fmtPct(s.avg) : '–'}</div>
+        <div class="f-big">${s ? fmtPct(s.avg) : '–'}</div>
         <div class="f-line">ITM <b>${s ? Math.round(s.itm) + ' %' : '–'}</b></div>
         <div class="f-line ${s ? signCls(s.net) : ''}"><b>${s ? eur(s.net) : '–'}</b></div>
         <div class="f-count">${s ? s.count + ' tournoi' + (s.count > 1 ? 's' : '') : 'aucun'}</div>
@@ -1480,8 +1510,8 @@
     }).join('');
     const best = filled.length > 1 ? filled.find(c => c.s.avg === bestAvg) : null;
     $('field-hint').textContent = !list.length ? 'Ajoute des tournois pour voir tes résultats par taille de field.'
-      : best ? '★ = ta meilleure place moyenne.'
-      : 'Joue des fields de tailles différentes pour pouvoir comparer.';
+      : best ? 'Grand chiffre = place moyenne (top %) · ★ = la meilleure · k = 1 000 joueurs.'
+      : 'Grand chiffre = place moyenne (top %) · k = 1 000 joueurs.';
   }
 
   // ---------- Profondeur dans l'argent ----------
@@ -1517,11 +1547,11 @@
         ${min ? `<div class="min" style="flex:${min}"></div>` : ''}
       </div>
       <div class="dp-legend">
-        <div><i style="background:var(--itm)"></i>Profond<b>${deep} <small style="font-weight:400;color:var(--muted)">${pct(deep)} %</small></b></div>
+        <div><i style="background:var(--itm)"></i>Max-cash<b>${deep} <small style="font-weight:400;color:var(--muted)">${pct(deep)} %</small></b></div>
         <div><i style="background:color-mix(in srgb, var(--itm) 55%, var(--bg))"></i>Milieu<b>${mid} <small style="font-weight:400;color:var(--muted)">${pct(mid)} %</small></b></div>
         <div><i style="background:var(--rolling)"></i>Min-cash<b>${min} <small style="font-weight:400;color:var(--muted)">${pct(min)} %</small></b></div>
       </div>
-      <div class="hint">Profond = top&nbsp;20&nbsp;% des payés · Min-cash = dernier&nbsp;20&nbsp;%${itmCount > items.length ? ` · ${itmCount - items.length}&nbsp;ITM sans «&nbsp;joueurs payés&nbsp;»` : ''}</div>`;
+      <div class="hint">Max-cash = top&nbsp;20&nbsp;% des payés · Min-cash = dernier&nbsp;20&nbsp;%${itmCount > items.length ? ` · ${itmCount - items.length}&nbsp;ITM sans «&nbsp;joueurs payés&nbsp;»` : ''}</div>`;
   }
 
   // ---------- Taux de bulle ----------
@@ -1532,32 +1562,67 @@
     const known = list.filter(t => t.paid >= 1 && t.paid <= t.players);
     if (!known.length) return '';
     const bub = known.filter(isBubble);
-    const out = known.filter(t => t.place > t.paid);
-    const paidIn = known.filter(t => t.place <= t.paid).length;
-    const closest = out.length ? out.reduce((c, t) => (t.place - t.paid) < (c.place - c.paid) ? t : c) : null;
     const rate = Math.round(bub.length / known.length * 100);
-    const dm = (d) => { const [, m, j] = d.split('-'); return `${+j}/${+m}`; };
-    return `
-      <div class="dp-sec">Bulle</div>
-      <div class="cmp2 bub">
-        <div><div class="k-label">Taux de bulle</div>
-          <div class="c2-v ${bub.length ? 'neg' : 'pos'}">${rate} %</div>
-          <div class="c2-p">${bub.length} sur ${known.length}</div></div>
-        <div><div class="k-label">Plus près</div>
-          <div class="c2-v">${closest ? 'à ' + fmtInt(closest.place - closest.paid) : '–'}</div>
-          <div class="c2-p">${closest ? (closest.place - closest.paid > 1 ? 'places' : 'place') + ' · ' + dm(closest.date) : 'jamais sorti'}</div></div>
-        <div><div class="k-label">Dans les payés</div>
-          <div class="c2-v pos">${Math.round(paidIn / known.length * 100)} %</div>
-          <div class="c2-p">${paidIn} sur ${known.length}</div></div>
+    // Une seule ligne discrète ; la définition s'affiche au survol / appui long
+    return `<div class="bub-mini">
+        <span>Taux de bulle</span><b class="${bub.length ? 'neg' : 'pos'}">${rate}&nbsp;%</b><span class="bub-n">${bub.length}/${known.length}</span>
       </div>
-      <div class="hint">Bulle = sorti dans les 10&nbsp;% de places juste après les payés · ${known.length}&nbsp;tournoi${known.length > 1 ? 's' : ''} avec «&nbsp;joueurs payés&nbsp;»</div>`;
+      <div class="bub-leg">Sorti dans les 10&nbsp;% de places juste avant l'ITM</div>`;
   }
   function renderDepth(list) {
     const items = list.filter(t => depthOf(t) != null);
     const known = list.filter(t => t.paid >= 1).length;
     $('depth-count').textContent = known ? `${known} avec payés` : '';
     const bub = bubbleHtml(list);
-    $('depth').innerHTML = bub + (bub && !items.length && !list.some(itmOf) ? '' : (bub ? '<div class="dp-gap"></div>' : '') + depthHtml(list));
+    // Profondeur d'abord, taux de bulle tout à la fin
+    $('depth').innerHTML = (bub && !items.length && !list.some(itmOf) ? '' : depthHtml(list)) + bub;
+  }
+
+  // ---------- Résultats par stack de départ ----------
+  // Abréviation : 20 000 → « 20k », 1 500 → « 1,5k »
+  const kfmt = (n) => n >= 1000 ? (Math.round(n / 100) / 10).toString().replace('.', ',') + 'k' : String(n);
+  const STACK_RANGES = [
+    { label: 'Short', sub: '< 10k', test: n => n < 10000 },
+    { label: 'Normal', sub: '10k – 25k', test: n => n >= 10000 && n < 25000 },
+    { label: 'Deep', sub: '25k – 50k', test: n => n >= 25000 && n < 50000 },
+    { label: 'Très deep', sub: '≥ 50k', test: n => n >= 50000 }
+  ];
+  function renderStacks(list) {
+    const withStack = list.filter(t => t.stack >= 1);
+    $('stack-count').textContent = withStack.length ? `${withStack.length} avec stack` : '';
+    if (!withStack.length) {
+      $('stack-table').innerHTML = '';
+      $('stack-hint').textContent = list.length
+        ? 'Renseigne le stack de départ de tes tournois (crayon) pour comparer tes résultats selon le stack.'
+        : 'Ajoute des tournois pour voir tes résultats par stack.';
+      return;
+    }
+    // Peu de stacks différents (cas courant : 10k, 20k…) → une tuile par stack ; sinon par tranches
+    const distinct = [...new Set(withStack.map(t => t.stack))].sort((a, b) => a - b);
+    const groups = distinct.length <= 4
+      ? distinct.map(v => ({ label: kfmt(v), sub: fmtInt(v) + ' jetons', test: n => n === v }))
+      : STACK_RANGES;
+    const cols = groups.map(g => ({ g, s: periodStats(withStack.filter(t => g.test(t.stack))) }))
+      .filter(c => c.s || groups === STACK_RANGES);
+    const filled = cols.filter(c => c.s);
+    const bestAvg = filled.length > 1 ? Math.min(...filled.map(c => c.s.avg)) : null;
+    const eur = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + fmtEur(Math.abs(v) >= 100 ? Math.round(Math.abs(v)) : Math.abs(v));
+    $('stack-table').style.gridTemplateColumns = `repeat(${Math.min(4, Math.max(cols.length, 2))}, 1fr)`;
+    $('stack-table').innerHTML = cols.map(({ g, s }) => {
+      const best = s && s.avg === bestAvg;
+      return `<div class="${best ? 'f-best-col' : ''}${s ? '' : ' f-none'}">
+        <div class="f-name">${g.label}${best ? ' <span class="f-star">★</span>' : ''}</div>
+        <div class="f-range">${g.sub}</div>
+        <div class="f-big">${s ? fmtPct(s.avg) : '–'}</div>
+        <div class="f-line">ITM <b>${s ? Math.round(s.itm) + ' %' : '–'}</b></div>
+        <div class="f-line ${s ? signCls(s.net) : ''}"><b>${s ? eur(s.net) : '–'}</b></div>
+        <div class="f-count">${s ? s.count + ' tournoi' + (s.count > 1 ? 's' : '') : 'aucun'}</div>
+      </div>`;
+    }).join('');
+    const missing = list.length - withStack.length;
+    $('stack-hint').textContent = 'Grand chiffre = place moyenne (top %)' +
+      (bestAvg != null ? ' · ★ = la meilleure' : '') +
+      (missing ? ` · ${missing} tournoi${missing > 1 ? 's' : ''} sans stack` : '');
   }
 
   // ---------- Séries ----------
@@ -1641,7 +1706,7 @@
       const byKey = Object.fromEntries(cardEls().map(c => [c.dataset.key, c]));
       const keys = order.filter(k => byKey[k]);
       // Nouvelle carte absente de l'ordre enregistré : on l'insère à sa place par défaut
-      const DEFAULT = ['kpi', 'compare', 'progression', 'bilan', 'field', 'depth', 'dist', 'series'];
+      const DEFAULT = ['kpi', 'compare', 'progression', 'bilan', 'field', 'stack', 'depth', 'dist', 'series'];
       Object.keys(byKey).filter(k => !keys.includes(k)).forEach(k => {
         const prev = DEFAULT.slice(0, DEFAULT.indexOf(k)).reverse().find(p => keys.includes(p));
         keys.splice(prev ? keys.indexOf(prev) + 1 : 0, 0, k);
@@ -1776,7 +1841,8 @@
     bilan: ['Bilan cumulé', 'Courbe de ton argent'],
     field: ['Par taille de field', 'Petits, moyens, gros tournois'],
     dist: ['Répartition des places', 'Histogramme par tranche'],
-    depth: ['Places payées', 'Taux de bulle et profondeur dans l\'argent'],
+    stack: ['Par stack de départ', 'Résultats selon le stack'],
+    depth: ['Places payées', 'Profondeur dans l\'argent et taux de bulle'],
     series: ['Séries', 'Séries ITM et derniers résultats']
   };
   function renderPref() {
@@ -1819,7 +1885,7 @@
   $('p-order').addEventListener('click', () => {
     ui.cardOrder = null; saveUI();
     const wrap = $('wrap');
-    ['kpi', 'compare', 'progression', 'bilan', 'field', 'depth', 'dist', 'series'].forEach(k => {
+    ['kpi', 'compare', 'progression', 'bilan', 'field', 'stack', 'depth', 'dist', 'series'].forEach(k => {
       const c = document.querySelector(`#wrap > .card[data-key="${k}"]`);
       if (c) wrap.appendChild(c);
     });
@@ -2080,6 +2146,7 @@
     $('d-gain').textContent = fmtNet(netOf(t));
     $('d-gain').className = 'v ' + signCls(netOf(t));
     $('d-money').innerHTML = `Buy-in ${fmtEur(buyinOf(t))} · Gain <strong class="pos">${fmtEur(gainOf(t))}</strong>` +
+      (t.stack ? ` · Stack ${fmtInt(t.stack)}` : '') +
       (t.paid ? '<br>' + paidInfoHtml(t.players, t.place, t.paid, '') : '') +
       (depthOf(t) != null ? ` · top ${fmtPct(depthOf(t))} des payés` : '') +
       (isBubble(t) ? ' · <b class="neg">bulle</b>' : '');
@@ -2141,17 +2208,23 @@
     if (!chip) return;
     const entry = $('name-sugg')._list[+chip.dataset.i];
     $('m-name').value = entry.name;
-    // Nouveau tournoi : on reprend la plateforme et le buy-in du dernier tournoi de ce nom (si le buy-in est encore vide)
+    // Nouveau tournoi : on reprend la plateforme, le buy-in et le stack du dernier tournoi de ce nom (s'ils sont encore vides)
     if (ui.modal && ui.modal.mode === 'add') {
       $('m-platform').value = entry.last.platform;
       if (!$('m-buyin').value.trim() && buyinOf(entry.last)) $('m-buyin').value = String(buyinOf(entry.last)).replace('.', ',');
+      if (!$('m-stack').value.trim() && entry.last.stack) $('m-stack').value = fmtInt(entry.last.stack);
     }
-    ['m-name', 'm-platform', 'm-buyin'].forEach(id => $(id).dispatchEvent(new Event('change')));
+    ['m-name', 'm-platform', 'm-buyin', 'm-stack'].forEach(id => $(id).dispatchEvent(new Event('change')));
     $('name-sugg').hidden = true;
     $('m-players').focus();   // la date est déjà celle du jour : on passe au nombre de joueurs
   });
 
-  const FIELDS = ['m-name', 'm-date', 'm-platform', 'm-players', 'm-paid', 'm-place', 'm-buyin', 'm-gain', 'm-itm'];
+  $('m-stack').addEventListener('blur', () => {
+    const n = $('m-stack').value.replace(/[\s\u202f\u00a0.]/g, '');
+    if (/^\d+$/.test(n)) { $('m-stack').value = fmtInt(+n); $('m-stack').dispatchEvent(new Event('change')); }
+  });
+
+  const FIELDS = ['m-name', 'm-date', 'm-platform', 'm-stack', 'm-players', 'm-paid', 'm-place', 'm-buyin', 'm-gain', 'm-itm'];
 
   function fillFields(v) {
     $('m-name').value = v.name || '';
@@ -2160,6 +2233,7 @@
     $('m-players').value = v.players || '';
     $('m-place').value = v.place || '';
     $('m-paid').value = v.paid || '';
+    $('m-stack').value = v.stack ? fmtInt(+String(v.stack).replace(/\D/g, '')) : '';
     const money = (x) => x === undefined || x === null || x === 0 || x === '' ? '' : String(x).replace('.', ',');
     $('m-buyin').value = money(v.buyin);
     $('m-gain').value = money(v.gain);
@@ -2175,6 +2249,7 @@
       players: $('m-players').value,
       place: $('m-place').value,
       paid: $('m-paid').value,
+      stack: $('m-stack').value,
       buyin: $('m-buyin').value,
       gain: $('m-gain').value,
       itm: $('m-itm').getAttribute('aria-pressed') === 'true'
@@ -2191,11 +2266,15 @@
     if (!players || players < 2) return { error: 'Le nombre de joueurs doit être au moins 2.' };
     if (!place || place < 1) return { error: 'La place finale doit être au moins 1.' };
     if (place > players) return { error: 'La place ne peut pas dépasser le nombre de joueurs.' };
+    // Stack : on accepte « 20000 », « 20 000 » ou « 20.000 »
+    const stackTxt = String(v.stack == null ? '' : v.stack).replace(/[\s\u202f\u00a0.]/g, '');
+    const stack = stackTxt === '' ? 0 : /^\d+$/.test(stackTxt) ? +stackTxt : NaN;
+    if (isNaN(stack) || (stackTxt !== '' && stack < 1)) return { error: 'Le stack de départ doit être un nombre de jetons (ex. 20 000).' };
     if (isNaN(paid) || (paidTxt !== '' && paid < 1)) return { error: 'Le nombre de joueurs payés doit être un nombre entier (ou vide).' };
     if (paid > players) return { error: 'Il ne peut pas y avoir plus de joueurs payés que de joueurs.' };
     if (isNaN(buyin) || buyin < 0) return { error: 'Le buy-in doit être un montant positif (ex. 10,50).' };
     if (isNaN(gain) || gain < 0) return { error: 'Le gain doit être un montant positif (ex. 125,50).' };
-    return { value: { name: String(v.name || '').trim().slice(0, 60), date: v.date, platform: v.platform, players, place, paid, itm: gain > 0 && !!v.itm, buyin, gain } };
+    return { value: { name: String(v.name || '').trim().slice(0, 60), date: v.date, platform: v.platform, players, place, paid, stack, itm: gain > 0 && !!v.itm, buyin, gain } };
   }
   function updatePreview() {
     const v = readFields();
@@ -2525,6 +2604,8 @@
       const players = Math.round(+t.players), place = Math.round(+t.place);
       const gain = Math.max(0, Math.round((+t.gain || 0) * 100) / 100);
       const buyin = Math.max(0, Math.round((+t.buyin || 0) * 100) / 100);
+      const stackN = Math.round(+t.stack || 0);
+      const stack = stackN >= 1 ? stackN : 0;
       const paidN = Math.round(+t.paid || 0);
       const paid = paidN >= 1 && paidN <= players ? paidN : 0;
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(new Date(date + 'T00:00:00'))) return null;
@@ -2533,7 +2614,7 @@
       while (seen.has(id)) id = newId() + i;
       seen.add(id);
       return { id, name: typeof t.name === 'string' ? t.name.trim().slice(0, 60) : '', date, platform, players, place,
-               paid, itm: gain > 0 && t.itm !== false, buyin, gain, created: +t.created || Date.now() + i };
+               paid, stack, itm: gain > 0 && t.itm !== false, buyin, gain, created: +t.created || Date.now() + i };
     }).filter(Boolean);
   }
   function askImport(text) {
