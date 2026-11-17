@@ -92,7 +92,7 @@
   .all-hidden { color: var(--text-2); }
 
   .card {
-    background: color-mix(in srgb, var(--surface) 80%, transparent);
+    background: color-mix(in srgb, var(--surface) 75%, transparent);
     -webkit-backdrop-filter: blur(14px) saturate(1.1);
     backdrop-filter: blur(14px) saturate(1.1);
     border: 1px solid var(--border);
@@ -252,7 +252,9 @@
   #z-range:focus { outline: none; }
   .roll-line { width: 22px; height: 0; border-top: 2px dotted var(--rolling); display: inline-block; }
   .legend #lg-roll[hidden], .legend #lg-zone[hidden] { display: none; }
-  .zone-sw { width: 14px; height: 10px; border-radius: 2px; display: inline-block; background: color-mix(in srgb, var(--text) 12%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--text) 30%, transparent); }
+  .zone-sw { position: relative; width: 16px; height: 14px; display: inline-block; background: linear-gradient(to bottom, color-mix(in srgb, var(--itm) 40%, transparent), transparent); border-bottom: 1px solid var(--itm); }
+  @media (min-resolution: 2dppx) { .zone-sw { border-bottom-width: 0.5px; } }
+  @media (min-resolution: 3dppx) { .zone-sw { border-bottom-width: 0.34px; } }
   [data-key="bilan"] .card-head { margin-bottom: 4px; }
   .bilan-box { position: relative; height: 140px; touch-action: pan-y; }
   .bilan-box .empty { padding: 40px 10px; }
@@ -436,7 +438,7 @@
   label { display: flex; flex-direction: column; font-size: .8rem; color: var(--text-2); gap: 5px; min-width: 0; }
   .field-wrap { position: relative; }
   .field-wrap .suffix { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 1rem; pointer-events: none; }
-  input, select {
+  input, select, textarea {
     -webkit-appearance: none; appearance: none;
     font: inherit;
     font-size: 16px;               /* évite le zoom automatique d'iOS */
@@ -449,6 +451,11 @@
     color: var(--text);
   }
   .field-wrap input { padding-right: 34px; }
+  /* Texte d'exemple des champs à remplir (hors date et plateforme) : 25 % d'opacité */
+  #m-form input:not([type="date"])::placeholder, #m-note::placeholder { color: var(--text); opacity: .25; }
+  #m-form input:not([type="date"])::-webkit-input-placeholder, #m-note::-webkit-input-placeholder { color: var(--text); opacity: .25; }
+  #m-note { min-height: 46px; line-height: 1.35; resize: none; overflow: hidden; }
+  .note-count { align-self: flex-end; font-size: .72rem; color: var(--muted); margin-top: -2px; }
   .field-wrap .suffix-wide { font-size: .85rem; }
   #m-stack { padding-right: 70px; }
   input[type="date"] { display: block; text-align: left; }
@@ -459,7 +466,7 @@
     background-size: 5px 5px; background-repeat: no-repeat;
     padding-right: 32px;
   }
-  input:focus, select:focus { outline: 2px solid var(--pokerstars); outline-offset: 1px; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--pokerstars); outline-offset: 1px; }
   .btn {
     -webkit-appearance: none; appearance: none;
     font: inherit; font-size: 1rem; font-weight: 600;
@@ -561,6 +568,11 @@
   .d-grid .v { font-weight: 700; font-size: 1.05rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .d-money { color: var(--text-2); font-size: .85rem; margin-top: 10px; }
   .d-compare { color: var(--text-2); font-size: .85rem; margin: 6px 0 12px; }
+  /* Commentaire du tournoi, façon citation */
+  .d-note { margin: 12px 0 0 25px; padding: 8px 10px; border-radius: 0 8px 8px 0; background: color-mix(in srgb, var(--text) 5%, transparent);
+            border-left: 2px solid color-mix(in srgb, var(--text) 35%, transparent); color: var(--text);
+            font-style: italic; font-size: .88rem; line-height: 1.4; white-space: pre-line; overflow-wrap: anywhere; }
+  .d-note::before { content: '« '; } .d-note::after { content: ' »'; }
   .d-compare strong.good { color: var(--itm); }
   .d-compare strong.bad { color: var(--danger); }
   .d-actions { display: grid; grid-template-columns: 48px 1fr 48px; gap: 8px; }
@@ -741,6 +753,7 @@
       <div><div class="label">Résultat</div><div class="v" id="d-ratio"></div></div>
       <div><div class="label">Bilan</div><div class="v" id="d-gain"></div></div>
     </div>
+    <blockquote class="d-note" id="d-note" hidden></blockquote>
     <div class="d-money" id="d-money"></div>
     <div class="d-compare" id="d-compare"></div>
     <div class="d-actions">
@@ -888,7 +901,7 @@
     <div class="list-tools">
       <div class="search-wrap">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-        <input type="search" id="l-search" placeholder="Nom, plateforme, date…" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+        <input type="search" id="l-search" placeholder="Nom, commentaire, date…" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
         <button type="button" class="search-clear" id="l-clear" aria-label="Effacer la recherche" hidden>✕</button>
       </div>
       <select id="l-sort" aria-label="Trier les tournois">
@@ -932,19 +945,19 @@
       </label>
       <label class="full">Stack de départ <span class="opt">(facultatif)</span>
         <span class="field-wrap">
-          <input type="text" id="m-stack" inputmode="numeric" placeholder="20 000" autocomplete="off">
+          <input type="text" id="m-stack" inputmode="numeric" placeholder="…" autocomplete="off">
           <span class="suffix suffix-wide">jetons</span>
         </span>
       </label>
       <div class="count-row full">
         <label>Joueurs
-          <input type="number" id="m-players" min="2" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="5418" required>
+          <input type="number" id="m-players" min="2" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="…" required>
         </label>
         <label>Joueurs payés
-          <input type="number" id="m-paid" min="1" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="800">
+          <input type="number" id="m-paid" min="1" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="…">
         </label>
         <label>Ma place
-          <input type="number" id="m-place" min="1" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="87" required>
+          <input type="number" id="m-place" min="1" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="…" required>
         </label>
       </div>
       <div class="money-row full">
@@ -966,6 +979,10 @@
         </div>
       </div>
       <div class="itm-note full">ITM coché automatiquement avec un gain. Si tu indiques les joueurs payés, il se coche ou se décoche selon ta place (gain de bounty hors des places payées = non ITM).</div>
+      <label class="full">Commentaire <span class="opt">(facultatif)</span>
+        <textarea id="m-note" rows="1" maxlength="500" placeholder="…" autocapitalize="sentences"></textarea>
+        <span class="note-count" id="m-note-count" hidden></span>
+      </label>
       <div class="preview full" id="m-preview"></div>
       <div class="error full" id="m-error"></div>
       <button type="submit" class="btn primary full" id="m-submit">Ajouter le tournoi</button>
@@ -1272,8 +1289,8 @@
     // Zone ITM : pour chaque tournoi dont on connaît les joueurs payés, une bande grise discrète
     // du haut du graphique (0 %) jusqu'à la part de joueurs payés (ex. 800 / 5 404 = 15 %)
     const zones = list.map(t => t.paid ? Math.min(100, t.paid / t.players * 100) : null);
-    // Gris neutre très léger (s'adapte au mode clair / sombre) pour rester discret
-    options.plugins.itmZone = { zones, fill: css('--text') + '12', edge: css('--text') + '38' };
+    // Voile vert pleine largeur en dégradé, jusqu'au niveau du dernier joueur payé
+    options.plugins.itmZone = { zones, color: css('--itm') };
     if (chart) {
       chart.data = data;
       chart.options = options;
@@ -1290,21 +1307,30 @@
       const zones = (opts && opts.zones) || [];
       if (!zones.some(z => z != null)) return;
       const { ctx, chartArea: a, scales: { x, y } } = ch;
+      const W = 7;                                   // largeur minimale du voile (px)
+      const dpr = ch.currentDevicePixelRatio || window.devicePixelRatio || 1;
+      const top = y.getPixelForValue(0);
+      // Le voile prend toute la largeur de la colonne du tournoi (petit espace entre deux tournois)
       const n = zones.length;
       const step = n > 1 ? Math.abs(x.getPixelForValue(1) - x.getPixelForValue(0)) : (a.right - a.left);
-      const top = y.getPixelForValue(0);
+      const topW = Math.max(W, step - 2);
       ctx.save();
       ctx.beginPath(); ctx.rect(a.left, a.top, a.right - a.left, a.bottom - a.top); ctx.clip();
       zones.forEach((z, i) => {
         if (z == null) return;
         const cx = x.getPixelForValue(i);
-        const left = Math.max(a.left, cx - step / 2), right = Math.min(a.right, cx + step / 2);
-        const bottom = y.getPixelForValue(z);
-        ctx.fillStyle = opts.fill;
-        ctx.fillRect(left, Math.min(top, bottom), right - left, Math.abs(bottom - top));
-        // Petit trait au niveau de la limite des places payées
-        ctx.fillStyle = opts.edge;
-        ctx.fillRect(left, bottom - 0.5, right - left, 1);
+        const bottom = y.getPixelForValue(z);       // hauteur du dernier joueur payé
+        // Voile vert : ≈ 35 % en haut (place 0 %), transparent en bas (limite des payés)
+        const g = ctx.createLinearGradient(0, top, 0, bottom);
+        g.addColorStop(0, opts.color + '59');
+        g.addColorStop(1, opts.color + '00');   // bas du voile : transparent
+        ctx.fillStyle = g;
+        // Voile pleine largeur de la colonne du tournoi, du haut jusqu'à la limite des payés
+        ctx.fillRect(cx - topW / 2, Math.min(top, bottom), topW, Math.abs(bottom - top));
+        // Trait vert continu, le plus fin possible (1 pixel physique de l'écran) à la limite des places payées
+        const hy = (Math.round(bottom * dpr) + 0.5) / dpr;
+        ctx.strokeStyle = opts.color; ctx.lineWidth = 1 / dpr;
+        ctx.beginPath(); ctx.moveTo(cx - topW / 2, hy); ctx.lineTo(cx + topW / 2, hy); ctx.stroke();
       });
       ctx.restore();
     }
@@ -2065,7 +2091,7 @@
     const words = norm(ui.listSearch).split(/\s+/).filter(Boolean);
     const matches = (t) => {
       if (!words.length) return true;
-      const hay = norm([t.name, t.platform, fmtDate(t.date), new Date(t.date + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }), itmOf(t) ? 'itm' : '', buyinOf(t) ? '' : 'freeroll'].join(' '));
+      const hay = norm([t.name, t.note, t.platform, fmtDate(t.date), new Date(t.date + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }), itmOf(t) ? 'itm' : '', buyinOf(t) ? '' : 'freeroll'].join(' '));
       return words.every(w => hay.includes(w));
     };
     const rows = list.filter(matches).sort(SORTS[ui.listSort] || SORTS.recent);
@@ -2150,6 +2176,9 @@
       (t.paid ? '<br>' + paidInfoHtml(t.players, t.place, t.paid, '') : '') +
       (depthOf(t) != null ? ` · top ${fmtPct(depthOf(t))} des payés` : '') +
       (isBubble(t) ? ' · <b class="neg">bulle</b>' : '');
+    const note = (t.note || '').trim();
+    $('d-note').hidden = !note;
+    $('d-note').textContent = note;
     $('d-compare').innerHTML = list.length < 2 || Math.abs(diff) < 0.05
       ? `Dans ta moyenne (Top ${fmtPct(avg)}).`
       : `<strong class="${diff > 0 ? 'good' : 'bad'}">${diff > 0 ? '▲' : '▼'} ${Math.abs(diff).toFixed(1).replace('.', ',')} pts</strong> ${diff > 0 ? 'mieux' : 'moins bien'} que ta moyenne (Top ${fmtPct(avg)}).`;
@@ -2224,7 +2253,7 @@
     if (/^\d+$/.test(n)) { $('m-stack').value = fmtInt(+n); $('m-stack').dispatchEvent(new Event('change')); }
   });
 
-  const FIELDS = ['m-name', 'm-date', 'm-platform', 'm-stack', 'm-players', 'm-paid', 'm-place', 'm-buyin', 'm-gain', 'm-itm'];
+  const FIELDS = ['m-name', 'm-date', 'm-platform', 'm-stack', 'm-players', 'm-paid', 'm-place', 'm-buyin', 'm-gain', 'm-itm', 'm-note'];
 
   function fillFields(v) {
     $('m-name').value = v.name || '';
@@ -2240,7 +2269,19 @@
     const g = parseGain(v.gain);
     setItm(g > 0 && v.itm !== false, !(g > 0));
     $('m-gain').dataset.prev = g > 0 ? '1' : '0';
+    $('m-note').value = v.note || '';
+    fitNote();
   }
+  // Le champ commentaire s'agrandit avec le texte ; compteur affiché près de la limite
+  function fitNote() {
+    const ta = $('m-note');
+    ta.style.height = 'auto';
+    ta.style.height = Math.max(46, ta.scrollHeight + 2) + 'px';
+    const n = ta.value.length;
+    $('m-note-count').hidden = n < 400;
+    $('m-note-count').textContent = n + ' / 500';
+  }
+  $('m-note').addEventListener('input', fitNote);
   function readFields() {
     return {
       name: $('m-name').value,
@@ -2252,7 +2293,8 @@
       stack: $('m-stack').value,
       buyin: $('m-buyin').value,
       gain: $('m-gain').value,
-      itm: $('m-itm').getAttribute('aria-pressed') === 'true'
+      itm: $('m-itm').getAttribute('aria-pressed') === 'true',
+      note: $('m-note').value
     };
   }
   function validate(v) {
@@ -2274,7 +2316,7 @@
     if (paid > players) return { error: 'Il ne peut pas y avoir plus de joueurs payés que de joueurs.' };
     if (isNaN(buyin) || buyin < 0) return { error: 'Le buy-in doit être un montant positif (ex. 10,50).' };
     if (isNaN(gain) || gain < 0) return { error: 'Le gain doit être un montant positif (ex. 125,50).' };
-    return { value: { name: String(v.name || '').trim().slice(0, 60), date: v.date, platform: v.platform, players, place, paid, stack, itm: gain > 0 && !!v.itm, buyin, gain } };
+    return { value: { name: String(v.name || '').trim().slice(0, 60), date: v.date, platform: v.platform, players, place, paid, stack, itm: gain > 0 && !!v.itm, buyin, gain, note: String(v.note || '').trim().slice(0, 500) } };
   }
   function updatePreview() {
     const v = readFields();
@@ -2335,6 +2377,7 @@
     updatePreview();
     lockScroll();
     $('modal').hidden = false;
+    fitNote();   // hauteur du commentaire calculée une fois la modale visible
     $('modal').querySelector('.modal').scrollTop = 0;
   }
   function closeModal() {
@@ -2614,7 +2657,8 @@
       while (seen.has(id)) id = newId() + i;
       seen.add(id);
       return { id, name: typeof t.name === 'string' ? t.name.trim().slice(0, 60) : '', date, platform, players, place,
-               paid, stack, itm: gain > 0 && t.itm !== false, buyin, gain, created: +t.created || Date.now() + i };
+               paid, stack, itm: gain > 0 && t.itm !== false, buyin, gain,
+               note: typeof t.note === 'string' ? t.note.trim().slice(0, 500) : '', created: +t.created || Date.now() + i };
     }).filter(Boolean);
   }
   function askImport(text) {
