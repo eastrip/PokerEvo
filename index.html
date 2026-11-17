@@ -2416,6 +2416,20 @@
   syncTopH();
   if (window.ResizeObserver) new ResizeObserver(syncTopH).observe($('topbar'));
   window.addEventListener('resize', syncTopH);
+
+  // ---------- Rotation de l'iPhone : les graphiques reprennent toute la largeur ----------
+  // Safari iOS ne prévient pas toujours le graphique à la fin de la rotation :
+  // on le redimensionne tout de suite, puis une fois l'animation de rotation terminée.
+  let refitTimer = null;
+  function refitCharts() { if (chart) chart.resize(); if (bilanChart) bilanChart.resize(); }
+  function onViewportChange() {
+    clearTimeout(refitTimer);
+    requestAnimationFrame(refitCharts);
+    refitTimer = setTimeout(() => { syncTopH(); refitCharts(); }, 400);
+  }
+  window.addEventListener('resize', onViewportChange);
+  window.addEventListener('orientationchange', onViewportChange);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', onViewportChange);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncTopH);
 
   // ---------- Modale « Mes tournois » ----------
