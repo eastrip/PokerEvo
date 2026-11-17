@@ -263,7 +263,8 @@
   .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: .8rem; color: var(--text-2); margin-bottom: 8px; }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
   .legend [hidden] { display: none; }
-  .star-lg { color: var(--text-2); font-size: 1rem; line-height: 1; }
+  /* Triangle pointe en haut = tournoi avec buy-in */
+  .tri-lg { width: 11px; height: 10px; background: var(--text-2); display: inline-block; clip-path: polygon(50% 0, 100% 100%, 0 100%); flex: none; }
   .dash { width: 22px; height: 0; border-top: 1px dashed var(--avg); opacity: .5; display: inline-block; }
   .chart-box { position: relative; height: 290px; touch-action: pan-y; -webkit-user-select: none; user-select: none; }
   .zoom-bar { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
@@ -751,7 +752,7 @@
       <span id="lg-zone" hidden><span class="zone-sw"></span>Zone ITM</span>
       <span><span class="dot" style="background:var(--text-2)"></span>ITM</span>
       <span><span class="hollow"></span>Hors ITM</span>
-      <span><span class="star-lg">★</span>Avec buy-in</span>
+      <span><span class="tri-lg"></span>Avec buy-in</span>
       <span><span class="dot" style="background:var(--text-2)"></span>Freeroll</span>
     </div>
     <div class="chart-box">
@@ -1242,9 +1243,9 @@
           pointBackgroundColor: list.map(t => itmOf(t) ? color(t.platform) : surface),
           pointBorderColor: list.map(t => itmOf(t) ? surface : color(t.platform)),
           pointBorderWidth: list.map(t => itmOf(t) ? 1.5 : 1.75),
-          // Tournoi payant (buy-in > 0) = étoile, freeroll = rond
+          // Tournoi payant (buy-in > 0) = triangle, freeroll = rond
           pointStyle: list.map(t => buyinOf(t) > 0
-            ? starImage(color(t.platform), itmOf(t), surface, t.id === ui.selectedId ? 10 : (small ? 4.5 : 6.5))
+            ? triangleImage(color(t.platform), itmOf(t), surface, t.id === ui.selectedId ? 9 : (small ? 4 : 5.5))
             : 'circle'),
           pointRadius: list.map(t => t.id === ui.selectedId ? 6.5 : (small ? 2.25 : 3.5)),
           pointHoverRadius: list.map(t => t.id === ui.selectedId ? 6.5 : (small ? 2.25 : 3.5)),
@@ -1358,37 +1359,37 @@
     }
   };
 
-  // ---------- Étoiles pour les tournois payants ----------
-  // Dessinées en haute résolution puis affichées à la taille voulue pour rester nettes sur iPhone.
-  const starCache = {};
-  function starImage(fill, filled, surface, r) {
+  // ---------- Triangles pour les tournois payants ----------
+  // Triangle équilatéral pointe en haut, r = distance du centre aux sommets.
+  // Dessiné en haute résolution puis affiché à la taille voulue pour rester net sur iPhone.
+  const triangleCache = {};
+  function triangleImage(fill, filled, surface, r) {
     const key = [fill, filled, surface, r].join('|');
-    if (starCache[key]) return starCache[key];
+    if (triangleCache[key]) return triangleCache[key];
     const dpr = Math.max(2, window.devicePixelRatio || 1);
     const size = Math.ceil((r * 2 + 4) * dpr);
     const c = document.createElement('canvas');
     c.width = c.height = size;
     const ctx = c.getContext('2d');
-    const cx = size / 2, cy = size / 2 + 0.6 * dpr, outer = r * dpr, inner = outer * 0.48;
+    const m = size / 2, d = r * dpr;
+    // Centre du triangle sur la valeur du tournoi (sommets à -90°, 30° et 150°)
     ctx.beginPath();
-    for (let i = 0; i < 10; i++) {
-      const rad = i % 2 ? inner : outer;
-      const a = -Math.PI / 2 + i * Math.PI / 5;
-      ctx.lineTo(cx + rad * Math.cos(a), cy + rad * Math.sin(a));
-    }
+    ctx.moveTo(m, m - d);
+    ctx.lineTo(m + d * Math.cos(Math.PI / 6), m + d / 2);
+    ctx.lineTo(m - d * Math.cos(Math.PI / 6), m + d / 2);
     ctx.closePath();
     ctx.lineJoin = 'round';
-    if (filled) {                       // ITM : étoile pleine avec liseré clair
+    if (filled) {                       // ITM : triangle plein avec liseré clair
       ctx.lineWidth = 1.5 * dpr; ctx.strokeStyle = surface; ctx.stroke();
       ctx.fillStyle = fill; ctx.fill();
-    } else {                            // hors ITM : étoile creuse
+    } else {                            // hors ITM : triangle creux
       ctx.fillStyle = surface; ctx.fill();
       ctx.lineWidth = 1.5 * dpr; ctx.strokeStyle = fill; ctx.stroke();
     }
     const img = new Image(size / dpr, size / dpr);
     img.onload = () => { if (chart) chart.draw(); };
     img.src = c.toDataURL();
-    starCache[key] = img;
+    triangleCache[key] = img;
     return img;
   }
 
