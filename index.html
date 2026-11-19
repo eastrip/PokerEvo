@@ -92,7 +92,7 @@
   /* L'en-tête est toujours sombre : teintes vives des plateformes, même en mode clair */
   .toolbar .chip[data-filter="Winamax"] { color: #ff2d3a; }
   .toolbar .chip[data-filter="PokerStars"] { color: #4f7df3; }
-  .toolbar .chip.off { color: rgba(255,255,255,.4); border-color: rgba(255,255,255,.18); }
+  .toolbar .chip.off, .toolbar .chip.empty { color: rgba(255,255,255,.4); border-color: rgba(255,255,255,.18); }
   .toolbar .chip .lbl { overflow: hidden; text-overflow: ellipsis; }
   .toolbar .chip .lbl-s { display: none; }
   .toolbar .save-btn { width: 38px; height: 38px; border-radius: 11px; position: relative; }
@@ -105,6 +105,36 @@
     box-shadow: 0 1px 4px rgba(0,0,0,.35);
   }
   .tb-count:empty { display: none; }
+  .tb-dot { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%; background: var(--rolling); box-shadow: 0 0 0 2px rgba(0,0,0,.6); }
+  .tb-dot[hidden] { display: none; }
+  #filter-btn.on { border-color: var(--rolling); color: var(--rolling); }
+  /* Fenêtre Filtres */
+  #filter-modal { z-index: 42; }
+  .f-sec { font-size: .8rem; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .04em; margin: 14px 2px 6px; display: flex; justify-content: space-between; align-items: center; }
+  .f-sec .link { font-size: .85rem; text-transform: none; letter-spacing: 0; font-weight: 600; }
+  .f-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .f-dates label { gap: 3px; }
+  .f-names { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; max-height: 42dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .f-name-row { display: flex; align-items: center; gap: 10px; padding: 0 12px; min-height: 46px; border-bottom: 1px solid var(--border); flex-direction: row; cursor: pointer; font-size: .95rem; color: var(--text); }
+  .f-name-row:last-child { border-bottom: 0; }
+  .f-name-row input {
+    -webkit-appearance: none; appearance: none; width: 22px; height: 22px; min-height: 0; flex: none; margin: 0; padding: 0;
+    border-radius: 6px; border: 1.5px solid var(--muted); background: transparent; display: grid; place-content: center;
+  }
+  .f-name-row input:checked { background: var(--itm); border-color: var(--itm); }
+  .f-name-row input:checked::after { content: ''; width: 10px; height: 6px; border: solid #fff; border-width: 0 0 2px 2px; transform: translateY(-1px) rotate(-45deg); }
+  .f-name-row .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .f-name-row .nm.none { font-style: italic; color: var(--text-2); }
+  .f-name-row small { color: var(--muted); font-size: .75rem; flex: none; }
+  .f-name-row .dot { width: 7px; height: 7px; flex: none; }
+  .f-switch { position: relative; display: inline-flex; flex-direction: row; cursor: pointer; }
+  .f-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .f-switch input:checked + .switch { background: var(--itm); }
+  .f-switch input:checked + .switch::after { transform: translateX(20px); }
+  .f-switch input:focus-visible + .switch { outline: 2px solid var(--pokerstars); outline-offset: 2px; }
+  .pref-row.pref-num.off { opacity: .4; }
+  .f-hint { color: var(--muted); font-size: .76rem; margin: 6px 2px 0; }
+  .f-empty { padding: 14px; text-align: center; color: var(--muted); font-size: .88rem; }
   @media (max-width: 359px) {
     .toolbar { gap: 4px; }
     .toolbar .save-btn { width: 36px; height: 36px; }
@@ -275,18 +305,20 @@
     background: var(--bg); color: var(--text); font: inherit; font-size: 1.25rem; line-height: 1; cursor: pointer;
   }
   .zoom-btn:disabled { opacity: .35; }
-  #z-range {
+  #z-range, #b-range {
     flex: 1; min-height: 0; height: 28px; padding: 0; border: 0; background: transparent;
     -webkit-appearance: none; appearance: none;
   }
-  #z-range::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: var(--border); }
-  #z-range::-webkit-slider-thumb {
+  #z-range::-webkit-slider-runnable-track, #b-range::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: var(--border); }
+  #z-range::-webkit-slider-thumb, #b-range::-webkit-slider-thumb {
     -webkit-appearance: none; appearance: none; margin-top: -9px;
     width: 24px; height: 24px; border-radius: 50%; background: var(--surface);
     border: 1px solid var(--border); box-shadow: 0 1px 4px rgba(0,0,0,.25);
   }
-  #z-range:disabled { opacity: .35; }
-  #z-range:focus { outline: none; }
+  #z-range:disabled, #b-range:disabled { opacity: .35; }
+  #z-range:focus, #b-range:focus { outline: none; }
+  #b-range { width: 100%; display: block; margin-top: 8px; }
+  #b-range[hidden] { display: none; }
   .roll-line { width: 22px; height: 0; border-top: 2px dotted var(--rolling); display: inline-block; }
   .legend #lg-roll[hidden], .legend #lg-zone[hidden] { display: none; }
   .zone-sw { position: relative; width: 16px; height: 14px; display: inline-block; background: linear-gradient(to bottom, color-mix(in srgb, var(--itm) 40%, transparent), transparent); border-bottom: 1px solid var(--itm); }
@@ -318,13 +350,6 @@
   .card.collapsed .card-head { margin-bottom: 0; }
 
   /* Choix de la période du graphique */
-  .period { display: flex; gap: 6px; margin-bottom: 10px; }
-  .per-btn {
-    -webkit-appearance: none; appearance: none; flex: 1;
-    min-height: 32px; border-radius: 8px; border: 1px solid var(--border);
-    background: transparent; color: var(--text-2); font: inherit; font-size: .82rem; font-weight: 600; cursor: pointer;
-  }
-  .per-btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
 
   /* Séries : 3 indicateurs compacts + bande des derniers résultats */
   .s-cols { display: grid; grid-template-columns: repeat(3, 1fr); font-variant-numeric: tabular-nums; }
@@ -635,6 +660,11 @@
   .pref-row input:checked + .switch { background: var(--itm); }
   .pref-row input:checked + .switch::after { transform: translateX(20px); }
   .pref-row input:focus-visible + .switch { outline: 2px solid var(--pokerstars); outline-offset: 2px; }
+  .pref-row.pref-num { cursor: default; }
+  .pref-row.pref-num input {
+    position: static; opacity: 1; width: 70px; height: 40px; min-height: 40px; flex: none;
+    text-align: center; padding: 6px 8px; font-size: 16px;
+  }
   .pref-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
   .pref-actions .btn { font-size: .9rem; min-height: 44px; }
   .pref-tip { color: var(--muted); font-size: .78rem; margin: 12px 2px 0; }
@@ -681,9 +711,15 @@
     <h1>PokerEvo</h1>
     <div class="toolbar">
       <div class="filters" role="group" aria-label="Filtrer par plateforme">
-        <button class="chip" data-filter="Winamax" aria-label="Winamax"><span class="lbl">Winamax</span><span class="lbl-s" aria-hidden="true">Winamax</span></button>
-        <button class="chip" data-filter="PokerStars" aria-label="PokerStars"><span class="lbl">PokerStars</span><span class="lbl-s" aria-hidden="true">Stars</span></button>
+        <button class="chip" data-filter="Winamax" aria-label="Winamax"><span class="lbl">Wnmx</span><span class="lbl-s" aria-hidden="true">WM</span></button>
+        <button class="chip" data-filter="PokerStars" aria-label="PokerStars"><span class="lbl">PStars</span><span class="lbl-s" aria-hidden="true">PS</span></button>
       </div>
+      <button class="save-btn" id="filter-btn" aria-label="Filtres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 4.5h18l-7 8.2V19l-4 1.5v-7.8z"/>
+        </svg>
+        <span class="tb-dot" id="filter-dot" hidden></span>
+      </button>
       <button class="save-btn" id="pref-btn" aria-label="Préférences">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>
@@ -741,11 +777,6 @@
     <div class="card-head">
       <h2 class="fold"><span class="chev" aria-hidden="true">›</span>Progression</h2>
     </div>
-    <div class="period" role="group" aria-label="Période affichée">
-      <button type="button" class="per-btn" data-period="30">30 jours</button>
-      <button type="button" class="per-btn" data-period="90">3 mois</button>
-      <button type="button" class="per-btn" data-period="all">Tout</button>
-    </div>
     <div class="legend">
       <span><span class="dash"></span>Moyenne</span>
       <span id="lg-roll"><span class="roll-line"></span>10 derniers</span>
@@ -801,6 +832,8 @@
       <canvas id="bilan-chart" aria-label="Évolution du bilan cumulé"></canvas>
       <div class="empty" id="bilan-empty" hidden>Le bilan apparaîtra avec tes premiers tournois.</div>
     </div>
+    <input type="range" id="b-range" min="0" max="0" step="1" aria-label="Faire défiler les tournois du bilan" hidden>
+    <div class="zoom-info" id="b-zinfo"></div>
   </div>
 
   <!-- Résultats par taille de field -->
@@ -856,6 +889,37 @@
 
 
 <!-- Fenêtre modale : préférences -->
+<div class="modal-backdrop" id="filter-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="f-title">
+    <div class="grabber" aria-hidden="true"></div>
+    <div class="modal-head">
+      <button type="button" class="link" id="f-reset">Réinitialiser</button>
+      <h2 id="f-title">Filtres</h2>
+      <button type="button" class="link strong" id="f-close">OK</button>
+    </div>
+    <div class="modal-sub" id="f-sub"></div>
+    <div class="f-sec"><span>Période</span><button type="button" class="link" id="f-all-dates">Toutes les dates</button></div>
+    <div class="f-dates">
+      <label>Du<input type="date" id="f-from"></label>
+      <label>Au<input type="date" id="f-to"></label>
+    </div>
+    <div class="f-sec"><span id="f-names-title">Tournois</span><button type="button" class="link" id="f-all-names">Décocher</button></div>
+    <div class="f-names" id="f-names"></div>
+    <p class="f-hint">Coche un ou plusieurs tournois. Aucune case cochée = tous les tournois.</p>
+    <div class="f-sec"><span>Statistiques ITM</span>
+      <label class="f-switch" aria-label="Activer le minimum de joueurs payés">
+        <input type="checkbox" id="p-itm-on"><span class="switch"></span>
+      </label>
+    </div>
+    <div class="pref-list">
+      <label class="pref-row pref-num">
+        <span>Minimum de joueurs payés<small>En dessous, le tournoi ne compte pas dans les stats ITM · vide = tous comptés</small></span>
+        <input type="text" id="p-itm-min" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="…" aria-label="Nombre minimum de joueurs payés">
+      </label>
+    </div>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="pref-modal" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="p-title">
     <div class="grabber" aria-hidden="true"></div>
@@ -1051,17 +1115,26 @@
   let tournaments = read(DATA_KEY, []);
   if (!Array.isArray(tournaments)) tournaments = [];
   // État de l'interface : filtre, modale ouverte (et sa saisie en cours), position de défilement
-  const ui = Object.assign({ filter: 'all', modal: null, listOpen: false, listSearch: '', listSort: 'recent', backupOpen: false, prefOpen: false, hiddenCards: {}, lastExport: null, selectedId: null, view: { count: null, end: null }, period: 'all', collapsed: {}, cardOrder: null, scrollY: 0 }, read(UI_KEY, {}));
+  const ui = Object.assign({ filter: 'all', modal: null, listOpen: false, listSearch: '', listSort: 'recent', backupOpen: false, prefOpen: false, filterOpen: false, fFrom: '', fTo: '', fNames: [], hiddenCards: {}, itmMinPaid: 2, itmMinOn: true, bilanEnd: null, lastExport: null, selectedId: null, view: { count: null, end: null }, period: 'all', collapsed: {}, cardOrder: null, scrollY: 0 }, read(UI_KEY, {}));
   // Reprise des anciennes versions de la page
   if (!ui.modal && ui.editingId) ui.modal = { mode: 'edit', id: ui.editingId, values: ui.editDraft || null };
   delete ui.editingId; delete ui.editDraft; delete ui.draft;
   if (ui.modal && ui.modal.mode === 'edit' && !tournaments.some(t => t.id === ui.modal.id)) ui.modal = null;
   const isObj = (o) => o && typeof o === 'object' && !Array.isArray(o);
   if (!['all', 'Winamax', 'PokerStars'].includes(ui.filter)) ui.filter = 'all';
-  if (!['30', '90', 'all'].includes(ui.period)) ui.period = 'all';
+  const isDay = (d) => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d);
+  if (!isDay(ui.fFrom)) ui.fFrom = '';
+  if (!isDay(ui.fTo)) ui.fTo = '';
+  if (!Array.isArray(ui.fNames)) ui.fNames = [];
+  ui.fNames = ui.fNames.filter(k => typeof k === 'string');
+  ui.period = 'all';   // ancien sélecteur 30 j / 3 mois retiré : remplacé par le filtre de dates
   if (!isObj(ui.view)) ui.view = { count: null, end: null };
+  if (!(ui.view.count == null || ui.view.count === 'all' || Number.isInteger(ui.view.count))) ui.view.count = null;
+  if (!(ui.bilanEnd == null || Number.isInteger(ui.bilanEnd))) ui.bilanEnd = null;
   if (!isObj(ui.collapsed)) ui.collapsed = {};
   if (!isObj(ui.hiddenCards)) ui.hiddenCards = {};
+  if (typeof ui.itmMinOn !== 'boolean') ui.itmMinOn = true;
+  if (!Number.isInteger(ui.itmMinPaid) || ui.itmMinPaid < 0 || ui.itmMinPaid > 100000) ui.itmMinPaid = 2;
   if (ui.cardOrder != null && !Array.isArray(ui.cardOrder)) ui.cardOrder = null;
   if (typeof ui.listSearch !== 'string') ui.listSearch = '';
   if (ui.modal && !isObj(ui.modal)) ui.modal = null;
@@ -1081,8 +1154,11 @@
   const buyinOf = (t) => +t.buyin || 0;
   // ITM : il faut un gain ; coché par défaut, sauf si décoché (gain de bounty hors places payées)
   const itmOf = (t) => gainOf(t) > 0 && t.itm !== false;
-  // Taux ITM : les tournois avec 1 seule place payée (winner-takes-all) ne comptent pas
-  const itmCounted = (t) => t.paid !== 1;
+  // Graphiques Progression et Bilan : 12 derniers tournois par défaut (lisibilité), le reste en glissant latéralement
+  const DEFAULT_VISIBLE = 12;
+  // Taux ITM : on peut ignorer (Préférences) les tournois avec moins de N joueurs payés.
+  // Par défaut N = 2 : seuls les tournois à 1 seule place payée sont ignorés. 0 = tout compte.
+  const itmCounted = (t) => !(ui.itmMinOn && ui.itmMinPaid > 1 && t.paid && t.paid < ui.itmMinPaid);   // interrupteur des Filtres
   const itmRate = (arr) => { const a = arr.filter(itmCounted); return a.length ? a.filter(itmOf).length / a.length * 100 : null; };
   const netOf = (t) => Math.round((gainOf(t) - buyinOf(t)) * 100) / 100;
   const signCls = (n) => n < 0 ? 'neg' : 'pos';
@@ -1091,6 +1167,8 @@
   const fmtDate = (d) => new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const fmtShort = (d) => new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', '');
   const fmtInt = (n) => n.toLocaleString('fr-FR');
+  // Recherche insensible aux accents et à la casse
+  const norm = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const esc = (str) => String(str || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   // Titre : le nom du tournoi s'il existe, sinon la plateforme
   const titleHtml = (t) => `<span class="dot" style="background:${color(t.platform)}"></span><span class="t-name">${esc(t.name || t.platform)}</span>${itmOf(t) ? ' <span class="badge">ITM</span>' : ''}`;
@@ -1105,10 +1183,23 @@
   const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
   const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
+  // Clé de nom pour le filtre des tournois ('' = tournoi sans nom)
+  const nameKey = (t) => norm((t.name || '').trim());
+  // Tournois des plateformes actives (Wnmx / PStars), avant les filtres
+  const platformList = () => tournaments.filter(t => ui.filter === 'all' || t.platform === ui.filter);
+  // Noms cochés encore présents sur les plateformes actives (sinon : pas de filtre de nom)
+  function activeNames(base) {
+    if (!ui.fNames.length) return [];
+    const avail = new Set(base.map(nameKey));
+    return ui.fNames.filter(k => avail.has(k));
+  }
+  const filtersActive = () => !!(ui.fFrom || ui.fTo || activeNames(platformList()).length);
   function visible() {
-    return tournaments
-      .filter(t => ui.filter === 'all' || t.platform === ui.filter)
-      .slice()
+    const base = platformList();
+    const names = activeNames(base);
+    return base
+      .filter(t => (!ui.fFrom || t.date >= ui.fFrom) && (!ui.fTo || t.date <= ui.fTo))
+      .filter(t => !names.length || names.includes(nameKey(t)))
       .sort((a, b) => a.date.localeCompare(b.date) || a.created - b.created);
   }
 
@@ -1120,6 +1211,12 @@
       b.classList.toggle('off', off);
       b.setAttribute('aria-pressed', String(!off));
     });
+    const fOn = filtersActive();
+    // Plateforme active mais sans aucun tournoi retenu par les filtres : bouton grisé
+    document.querySelectorAll('.chip').forEach(b => b.classList.toggle('empty',
+      fOn && !b.classList.contains('off') && !list.some(t => t.platform === b.dataset.filter)));
+    $('filter-btn').classList.toggle('on', fOn);
+    $('filter-dot').hidden = !fOn;
     renderStats(list);
     renderChart(list, quick);
     renderList(list);
@@ -1170,21 +1267,16 @@
     $('s-itm-sub').textContent = counted.length ? `${itm} sur ${counted.length}` : '';
   }
 
-  // Période du graphique : les tournois sont triés par date, la période est donc la fin de la liste
-  function periodStart(list) {
-    if (ui.period === 'all') return 0;
-    const d = new Date(); d.setDate(d.getDate() - Number(ui.period));
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-    const cutoff = d.toISOString().slice(0, 10);
-    const i = list.findIndex(t => t.date >= cutoff);
-    return i < 0 ? list.length : i;
-  }
-  const periodList = (list) => list.slice(periodStart(list));
+  // L'ancien sélecteur de période (30 j / 3 mois) est remplacé par le filtre de dates (visible()) :
+  // le graphique prend toute la liste déjà filtrée.
+  const periodStart = () => 0;
+  const periodList = (list) => list;
 
   function renderChart(list, quick) {
     lastChartList = list;
-    document.querySelectorAll('.per-btn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.period === ui.period)));
-    $('empty').innerHTML = 'Aucun tournoi à afficher.<br>Touche « ＋ » en haut pour ajouter ton premier tournoi.';
+    $('empty').innerHTML = tournaments.length && !list.length
+      ? 'Aucun tournoi ne correspond aux filtres.<br>Change les filtres ou touche « Réinitialiser ».'
+      : 'Aucun tournoi à afficher.<br>Touche « ＋ » en haut pour ajouter ton premier tournoi.';
     const canvas = $('chart');
     $('empty').hidden = list.length > 0;
     canvas.style.display = list.length ? 'block' : 'none';
@@ -1213,7 +1305,7 @@
     const pList = list.slice(p), pValues = allValues.slice(p), pRolling = rolling.slice(p);
     if (!pList.length) {
       $('empty').hidden = false;
-      $('empty').innerHTML = 'Aucun tournoi sur cette période.<br>Choisis une période plus longue.';
+      $('empty').innerHTML = 'Aucun tournoi ne correspond aux filtres.';
       canvas.style.display = 'none';
       $('zoom-bar').hidden = true; $('z-info').textContent = '';
       if (chart) { chart.destroy(); chart = null; }
@@ -1456,26 +1548,52 @@
   // ---------- Courbe du bilan cumulé ----------
   let bilanChart = null;
   let bilanSelId = ui.bilanSelId || null;
+  let lastBilanList = [];
+  // Fenêtre du bilan : 12 derniers tournois par défaut, défilement latéral pour les précédents
+  function bilanWindow(n) {
+    const count = Math.min(n, DEFAULT_VISIBLE);
+    const end = ui.bilanEnd == null ? n - 1 : Math.max(count - 1, Math.min(n - 1, ui.bilanEnd));
+    return { start: end - count + 1, end, count, total: n };
+  }
+  function setBilanEnd(end) {
+    const n = lastBilanList.length;
+    if (!n) return;
+    const count = Math.min(n, DEFAULT_VISIBLE);
+    end = Math.max(count - 1, Math.min(n - 1, Math.round(end)));
+    ui.bilanEnd = end >= n - 1 ? null : end;
+    saveUI();
+    renderBilan(lastBilanList, true);
+  }
   function renderBilan(list, quick) {
+    lastBilanList = list;
     const canvas = $('bilan-chart');
     let run = 0;
-    const cumul = list.map(t => (run = Math.round((run + netOf(t)) * 100) / 100));
-    const total = cumul.length ? cumul[cumul.length - 1] : 0;
+    const cumulAll = list.map(t => (run = Math.round((run + netOf(t)) * 100) / 100));
+    const total = cumulAll.length ? cumulAll[cumulAll.length - 1] : 0;
     $('bilan-total').textContent = list.length ? fmtNet(total) : '';
     $('bilan-total').className = 'bilan-total ' + signCls(total);
     $('bilan-empty').hidden = list.length > 0;
     canvas.style.display = list.length ? 'block' : 'none';
-    let bilanSel = list.findIndex(t => t.id === bilanSelId);
-    if (bilanSel < 0) bilanSel = null;
+    let bilanSelAll = list.findIndex(t => t.id === bilanSelId);
+    if (bilanSelAll < 0) bilanSelAll = null;
+    // Partie visible de la courbe (le cumul est calculé sur tous les tournois)
+    const bw = bilanWindow(list.length);
+    const full = list;
+    const cumul = cumulAll.slice(bw.start, bw.end + 1);
+    const bilanSel = bilanSelAll != null && bilanSelAll >= bw.start && bilanSelAll <= bw.end ? bilanSelAll - bw.start : null;
+    const scrollable = bw.total > bw.count;
+    $('b-range').hidden = !scrollable;
+    $('b-range').min = bw.count - 1; $('b-range').max = bw.total - 1; $('b-range').value = bw.end;
+    $('b-zinfo').textContent = scrollable ? `Tournois ${bw.start + 1} à ${bw.end + 1} sur ${bw.total} · glisse pour défiler` : '';
 
     // Ligne d'info : plus haut / plus bas, ou le point touché sur la courbe
     const info = $('bilan-info');
-    if (bilanSel != null) {
-      const t = list[bilanSel];
+    if (bilanSelAll != null) {
+      const t = list[bilanSelAll];
       const d = t.date.split('-');
-      info.innerHTML = `<span class="sel">${+d[2]}/${+d[1]} · ${esc(t.name || t.platform)} : <b class="${signCls(netOf(t))}">${fmtNet(netOf(t))}</b> → cumul <b class="${signCls(cumul[bilanSel])}">${fmtNet(cumul[bilanSel])}</b></span>`;
+      info.innerHTML = `<span class="sel">${+d[2]}/${+d[1]} · ${esc(t.name || t.platform)} : <b class="${signCls(netOf(t))}">${fmtNet(netOf(t))}</b> → cumul <b class="${signCls(cumulAll[bilanSelAll])}">${fmtNet(cumulAll[bilanSelAll])}</b></span>`;
     } else if (list.length) {
-      const hi = Math.max(0, ...cumul), lo = Math.min(0, ...cumul);
+      const hi = Math.max(0, ...cumulAll), lo = Math.min(0, ...cumulAll);
       info.innerHTML = `Plus haut <b class="pos">${fmtNet(hi)}</b> · plus bas <b class="${signCls(lo)}">${fmtNet(lo)}</b> · touche la courbe`;
     } else {
       info.textContent = '';
@@ -1488,9 +1606,10 @@
     if (!window.Chart || !list.length) { if (bilanChart && !list.length) { bilanChart.destroy(); bilanChart = null; } return; }
 
     const pos = css('--itm'), neg = css('--danger'), surface = css('--surface');
-    const small = list.length > 40;
+    const small = cumul.length > 40;
+    const shown = full.slice(bw.start, bw.end + 1);
     const data = {
-      labels: list.map(t => fmtShort(t.date)),
+      labels: shown.map(t => fmtShort(t.date)),
       datasets: [{
         label: 'Bilan cumulé',
         data: cumul,
@@ -1517,9 +1636,10 @@
       plugins: { legend: { display: false }, tooltip: { enabled: false } },
       onClick: (evt, _els, ch) => {
         const hit = ch.getElementsAtEventForMode(evt, 'nearest', { axis: 'x', intersect: false }, false)[0];
-        bilanSelId = hit && list[hit.index] && list[hit.index].id !== bilanSelId ? list[hit.index].id : null;
+        const t = hit && shown[hit.index];
+        bilanSelId = t && t.id !== bilanSelId ? t.id : null;
         ui.bilanSelId = bilanSelId; saveUI();
-        renderBilan(list, true);
+        renderBilan(full, true);
       },
       scales: {
         y: {
@@ -1680,7 +1800,7 @@
 
   // ---------- Séries ----------
   function renderSeries(list) {
-    list = list.filter(itmCounted);     // tournois à 1 seule place payée ignorés
+    list = list.filter(itmCounted);     // tournois ignorés pour l'ITM (seuil des Préférences)
     if (!list.length) { $('series').innerHTML = '<div class="s-empty">Ajoute des tournois pour voir tes séries.</div>'; return; }
     // Parcours chronologique : plus longues suites ITM / sans ITM, avec leurs dates
     let best = { n: 0 }, worst = { n: 0 }, run = null;
@@ -1773,7 +1893,7 @@
   (function () {
     const LONG_PRESS = 450;          // ms d'appui avant de pouvoir déplacer
     const MOVE_TOLERANCE = 8;        // px de mouvement autorisés pendant l'appui
-    const NO_START = 'button, input, select, textarea, a, label, .chart-box, .bilan-box, .zoom-bar, .period, .filters';
+    const NO_START = 'button, input, select, textarea, a, label, .chart-box, .bilan-box, .zoom-bar, .filters';
     let press = null, drag = null, raf = null;
 
     function start(card, x, y) {
@@ -1910,6 +2030,82 @@
       </label>`;
     }).join('');
   }
+  // ---------- Fenêtre Filtres (dates + noms de tournois) ----------
+  function renderFilters() {
+    const base = platformList();
+    $('f-from').value = ui.fFrom; $('f-to').value = ui.fTo;
+    if (document.activeElement !== $('p-itm-min')) $('p-itm-min').value = ui.itmMinPaid > 0 ? String(ui.itmMinPaid) : '';
+    $('p-itm-on').checked = ui.itmMinOn;
+    $('p-itm-min').disabled = !ui.itmMinOn;
+    $('p-itm-min').closest('.pref-row').classList.toggle('off', !ui.itmMinOn);
+    $('f-from').max = ui.fTo || ''; $('f-to').min = ui.fFrom || '';
+    const n = visible().length;
+    $('f-sub').textContent = `${n} tournoi${n > 1 ? 's' : ''} affiché${n > 1 ? 's' : ''} sur ${base.length}`;
+    $('f-names-title').textContent = 'Tournois ' + (ui.filter === 'all' ? 'Wnmx et PStars' : ui.filter === 'Winamax' ? 'Wnmx' : 'PStars');
+    // Noms des plateformes actives, du plus joué au moins joué
+    const map = new Map();
+    base.forEach(t => {
+      const k = nameKey(t);
+      const e = map.get(k) || { k, name: (t.name || '').trim(), count: 0, platforms: new Set() };
+      e.count++; e.platforms.add(t.platform);
+      map.set(k, e);
+    });
+    const rows = [...map.values()].sort((a, b) => (a.k === '') - (b.k === '') || b.count - a.count || a.name.localeCompare(b.name, 'fr'));
+    const sel = new Set(activeNames(base));
+    $('f-names').innerHTML = rows.length ? rows.map(e => `
+      <label class="f-name-row">
+        <input type="checkbox" data-k="${esc(e.k)}" ${sel.has(e.k) ? 'checked' : ''}>
+        ${[...e.platforms].map(p => `<span class="dot" style="background:${color(p)}"></span>`).join('')}
+        <span class="nm${e.k ? '' : ' none'}">${e.k ? esc(e.name) : 'Sans nom'}</span>
+        <small>×${e.count}</small>
+      </label>`).join('') : '<div class="f-empty">Aucun tournoi sur cette plateforme.</div>';
+    $('f-all-names').disabled = !sel.size;
+    $('f-all-dates').disabled = !ui.fFrom && !ui.fTo;
+    $('f-reset').disabled = !filtersActive();
+  }
+  function applyFilters() {
+    ui.view = { count: null, end: null };   // nouvelle sélection : retour aux 12 derniers
+    ui.bilanEnd = null;
+    saveUI(); render(true); renderFilters();
+  }
+  function openFilters() {
+    ui.filterOpen = true; saveUI();
+    renderFilters();
+    lockScroll();
+    $('filter-modal').hidden = false;
+  }
+  function closeFilters() {
+    $('filter-modal').hidden = true;
+    ui.filterOpen = false;
+    if (!anyModalOpen()) unlockScroll();
+    saveUI();
+    requestAnimationFrame(() => { if (chart) chart.resize(); if (bilanChart) bilanChart.resize(); });
+  }
+  $('filter-btn').addEventListener('click', openFilters);
+  $('f-close').addEventListener('click', closeFilters);
+  $('filter-modal').addEventListener('click', e => { if (e.target === $('filter-modal')) closeFilters(); });
+  $('f-from').addEventListener('change', e => {
+    ui.fFrom = e.target.value || '';
+    if (ui.fFrom && ui.fTo && ui.fFrom > ui.fTo) ui.fTo = ui.fFrom;
+    applyFilters();
+  });
+  $('f-to').addEventListener('change', e => {
+    ui.fTo = e.target.value || '';
+    if (ui.fFrom && ui.fTo && ui.fTo < ui.fFrom) ui.fFrom = ui.fTo;
+    applyFilters();
+  });
+  $('f-all-dates').addEventListener('click', () => { ui.fFrom = ''; ui.fTo = ''; applyFilters(); });
+  $('f-all-names').addEventListener('click', () => { ui.fNames = []; applyFilters(); });
+  $('f-reset').addEventListener('click', () => { ui.fFrom = ''; ui.fTo = ''; ui.fNames = []; applyFilters(); });
+  $('f-names').addEventListener('change', e => {
+    const k = e.target.dataset.k;
+    if (k == null) return;
+    const set = new Set(activeNames(platformList()));
+    if (e.target.checked) set.add(k); else set.delete(k);
+    ui.fNames = [...set];
+    applyFilters();
+  });
+
   function openPref() {
     ui.prefOpen = true; saveUI();
     renderPref();
@@ -1935,6 +2131,16 @@
     saveUI();
     render(true);
   });
+  // Interrupteur : active / désactive le minimum sans perdre la valeur saisie
+  $('p-itm-on').addEventListener('change', e => { ui.itmMinOn = e.target.checked; saveUI(); render(true); renderFilters(); });
+  // Seuil ITM : appliqué tout de suite aux statistiques
+  $('p-itm-min').addEventListener('input', () => {
+    const el = $('p-itm-min');
+    const digits = el.value.replace(/\D/g, '');
+    if (digits !== el.value) el.value = digits;
+    ui.itmMinPaid = digits ? Math.min(100000, parseInt(digits, 10)) : 0;
+    saveUI(); render(true);
+  });
   $('p-all').addEventListener('click', () => { ui.hiddenCards = {}; saveUI(); renderPref(); render(true); });
   $('p-order').addEventListener('click', () => {
     ui.cardOrder = null; saveUI();
@@ -1947,13 +2153,6 @@
     renderPref();
   });
 
-  // ---------- Période du graphique ----------
-  document.querySelectorAll('.per-btn').forEach(b => b.addEventListener('click', () => {
-    ui.period = b.dataset.period;
-    ui.view = { count: null, end: null };   // nouvelle période : on repart d'une vue complète
-    saveUI();
-    render();
-  }));
 
   // ---------- Répartition des places finales ----------
   const PLACE_BUCKETS = [
@@ -2004,7 +2203,9 @@
   function computeWindow(list) {
     const total = list.length;
     const minC = Math.min(MIN_VISIBLE, total);
-    let count = ui.view.count == null ? total : Math.max(minC, Math.min(total, ui.view.count));
+    let count = ui.view.count == null ? Math.min(total, DEFAULT_VISIBLE)
+      : ui.view.count === 'all' ? total
+      : Math.max(minC, Math.min(total, ui.view.count));
     let end = ui.view.end == null ? total - 1 : Math.max(count - 1, Math.min(total - 1, ui.view.end));
     return { start: end - count + 1, end, count, total };
   }
@@ -2026,7 +2227,9 @@
     if (!total) return;
     count = Math.max(Math.min(MIN_VISIBLE, total), Math.min(total, Math.round(count)));
     end = Math.max(count - 1, Math.min(total - 1, Math.round(end)));
-    ui.view = { count: count >= total ? null : count, end: end >= total - 1 ? null : end };
+    // null = vue par défaut (12 derniers) ; 'all' = tout afficher (zoom arrière complet)
+    const vCount = count === Math.min(total, DEFAULT_VISIBLE) ? null : count >= total ? 'all' : count;
+    ui.view = { count: vCount, end: end >= total - 1 ? null : end };
     saveUI();
     renderChart(lastChartList, quick);
   }
@@ -2089,8 +2292,36 @@
     }, { passive: false });
   })();
 
-  // Recherche insensible aux accents et à la casse
-  const norm = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  // Bilan cumulé : glisser à un doigt (ou le curseur) pour voir les tournois précédents
+  $('b-range').addEventListener('input', e => setBilanEnd(+e.target.value));
+  (function () {
+    const box = document.querySelector('.bilan-box');
+    let g = null;
+    const area = () => (bilanChart && bilanChart.chartArea) ? bilanChart.chartArea.right - bilanChart.chartArea.left : box.clientWidth;
+    box.addEventListener('touchstart', e => {
+      if (e.touches.length !== 1) { g = null; return; }
+      g = { x: e.touches[0].clientX, y: e.touches[0].clientY, w: bilanWindow(lastBilanList.length), moved: false };
+    }, { passive: true });
+    box.addEventListener('touchmove', e => {
+      if (!g || e.touches.length !== 1) return;
+      const dx = e.touches[0].clientX - g.x, dy = e.touches[0].clientY - g.y;
+      if (!g.moved && (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy))) return;   // laisse défiler la page
+      g.moved = true;
+      e.preventDefault();
+      if (g.w.count >= g.w.total) return;
+      const step = area() / Math.max(1, g.w.count - 1);
+      setBilanEnd(g.w.end - dx / step);
+    }, { passive: false });
+    const end = () => { g = null; };
+    box.addEventListener('touchend', end);
+    box.addEventListener('touchcancel', end);
+    box.addEventListener('wheel', e => {
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      setBilanEnd(bilanWindow(lastBilanList.length).end + e.deltaX / 20);
+    }, { passive: false });
+  })();
+
   // Surligne le texte cherché (le texte est échappé avant)
   function hl(text) {
     const q = ui.listSearch.trim();
@@ -2125,7 +2356,7 @@
     const rows = list.filter(matches).sort(SORTS[ui.listSort] || SORTS.recent);
     $('l-count').textContent = words.length ? `${rows.length} résultat${rows.length > 1 ? 's' : ''} sur ${list.length}` : '';
     $('list-empty').hidden = rows.length > 0;
-    $('list-empty').textContent = list.length ? 'Aucun tournoi ne correspond à ta recherche.' : 'Aucun tournoi enregistré.';
+    $('list-empty').textContent = list.length ? 'Aucun tournoi ne correspond à ta recherche.' : tournaments.length ? 'Aucun tournoi ne correspond aux filtres.' : 'Aucun tournoi enregistré.';
     rows.forEach(t => {
       const n = netOf(t);
       const li = document.createElement('li');
@@ -2378,7 +2609,7 @@
     document.body.classList.add('modal-open');
   }
   function anyModalOpen() {
-    return ['modal', 'list-modal', 'backup-modal', 'pref-modal'].some(id => !$(id).hidden);
+    return ['modal', 'list-modal', 'backup-modal', 'pref-modal', 'filter-modal'].some(id => !$(id).hidden);
   }
   function unlockScroll() {
     if (lockedScroll === null) return;
@@ -2530,6 +2761,7 @@
     else if (!$('modal').hidden) closeModal();
     else if (!$('backup-modal').hidden) closeBackup();
     else if (!$('pref-modal').hidden) closePref();
+    else if (!$('filter-modal').hidden) closeFilters();
     else if (!$('list-modal').hidden) closeList();
   });
 
@@ -2605,7 +2837,7 @@
   const markExported = () => { ui.lastExport = Date.now(); saveUI(); renderBackupInfo(); };
 
   // ---------- Export / import ----------
-  const PREF_KEYS = ['hiddenCards', 'cardOrder', 'collapsed', 'period', 'filter', 'listSort'];
+  const PREF_KEYS = ['hiddenCards', 'cardOrder', 'collapsed', 'filter', 'listSort', 'itmMinPaid', 'itmMinOn', 'fFrom', 'fTo', 'fNames'];
   const backupJson = () => JSON.stringify({
     app: 'PokerEvo', version: 2, exportedAt: new Date().toISOString(),
     tournaments,
@@ -2721,16 +2953,20 @@
     if (!clean.length) return backupMsg('', 'Aucun tournoi valide trouvé dans cette sauvegarde.');
     openSheet(`Importer ${clean.length} tournoi(s) ? Les données actuelles seront remplacées.`, 'Importer', () => {
       tournaments = clean; saveData();
-      ui.selectedId = null; bilanSelId = null; ui.bilanSelId = null; ui.view = { count: null, end: null };
+      ui.selectedId = null; bilanSelId = null; ui.bilanSelId = null; ui.view = { count: null, end: null }; ui.bilanEnd = null;
       // Préférences d'affichage présentes dans la sauvegarde (cartes masquées, ordre, replis, période…)
       if (importedPrefs) {
         const p = importedPrefs;
         if (isObj(p.hiddenCards)) ui.hiddenCards = p.hiddenCards;
         if (isObj(p.collapsed)) ui.collapsed = p.collapsed;
         if (p.cardOrder === null || Array.isArray(p.cardOrder)) ui.cardOrder = p.cardOrder;
-        if (['30', '90', 'all'].includes(p.period)) ui.period = p.period;
         if (['all', 'Winamax', 'PokerStars'].includes(p.filter)) ui.filter = p.filter;
         if (typeof p.listSort === 'string') ui.listSort = p.listSort;
+        if (isDay(p.fFrom) || p.fFrom === '') ui.fFrom = p.fFrom;
+        if (isDay(p.fTo) || p.fTo === '') ui.fTo = p.fTo;
+        if (Array.isArray(p.fNames)) ui.fNames = p.fNames.filter(k => typeof k === 'string');
+        if (typeof p.itmMinOn === 'boolean') ui.itmMinOn = p.itmMinOn;
+        if (Number.isInteger(p.itmMinPaid) && p.itmMinPaid >= 0 && p.itmMinPaid <= 100000) ui.itmMinPaid = p.itmMinPaid;
         applyCardOrder();
       }
       saveUI();
@@ -2787,6 +3023,7 @@
     if (ui.listOpen) openList();
     if (ui.backupOpen) openBackup();
     if (ui.prefOpen) openPref();
+    if (ui.filterOpen) openFilters();
     if (ui.modal) openModal(ui.modal.mode, ui.modal.id, ui.modal.values);
   });
   window.addEventListener('load', restore);
