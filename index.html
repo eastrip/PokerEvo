@@ -230,7 +230,7 @@
   .c2-p { color: var(--muted); font-size: .68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* Suggestions de noms dans la saisie */
-  .name-sugg { display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; margin-top: -6px; padding-bottom: 2px; }
+  .name-sugg { display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; margin-top: 2px; padding-bottom: 2px; }
   .name-sugg::-webkit-scrollbar { display: none; }
   .name-sugg[hidden] { display: none; }
   .sugg-chip {
@@ -1081,6 +1081,9 @@
   const buyinOf = (t) => +t.buyin || 0;
   // ITM : il faut un gain ; coché par défaut, sauf si décoché (gain de bounty hors places payées)
   const itmOf = (t) => gainOf(t) > 0 && t.itm !== false;
+  // Taux ITM : les tournois avec 1 seule place payée (winner-takes-all) ne comptent pas
+  const itmCounted = (t) => t.paid !== 1;
+  const itmRate = (arr) => { const a = arr.filter(itmCounted); return a.length ? a.filter(itmOf).length / a.length * 100 : null; };
   const netOf = (t) => Math.round((gainOf(t) - buyinOf(t)) * 100) / 100;
   const signCls = (n) => n < 0 ? 'neg' : 'pos';
   const fmtNet = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + fmtEur(Math.abs(n));
@@ -1161,9 +1164,10 @@
     $('s-best').textContent = fmtPct(ratio(best));
     $('s-best-sub').textContent = `${fmtInt(best.place)}/${fmtInt(best.players)}`;
     $('s-best-sub').title = best.platform + (best.name ? ' · ' + best.name : '');
-    const itm = list.filter(itmOf).length;
-    $('s-itm').textContent = Math.round(itm / list.length * 100) + ' %';
-    $('s-itm-sub').textContent = `${itm} sur ${list.length}`;
+    const counted = list.filter(itmCounted);
+    const itm = counted.filter(itmOf).length;
+    $('s-itm').textContent = counted.length ? Math.round(itm / counted.length * 100) + ' %' : '–';
+    $('s-itm-sub').textContent = counted.length ? `${itm} sur ${counted.length}` : '';
   }
 
   // Période du graphique : les tournois sont triés par date, la période est donc la fin de la liste
@@ -1401,7 +1405,7 @@
     return {
       count: arr.length,
       avg: arr.reduce((s, t) => s + ratio(t), 0) / arr.length,
-      itm: arr.filter(itmOf).length / arr.length * 100,
+      itm: itmRate(arr),
       net: Math.round((gains - buyins) * 100) / 100
     };
   }
@@ -1435,7 +1439,7 @@
         d: `<div class="c2-d flat">${cN - pN > 0 ? '+' : cN - pN < 0 ? '−' : '='}${cN - pN ? Math.abs(cN - pN) : ''}</div>` },
       { label: 'Place moy.', now: cur ? fmtPct(cur.avg) : '–', prev: prev ? fmtPct(prev.avg) : '–',
         d: delta(cur && cur.avg, prev && prev.avg, false, pts) },
-      { label: 'ITM', now: cur ? Math.round(cur.itm) + ' %' : '–', prev: prev ? Math.round(prev.itm) + ' %' : '–',
+      { label: 'ITM', now: cur && cur.itm != null ? Math.round(cur.itm) + ' %' : '–', prev: prev && prev.itm != null ? Math.round(prev.itm) + ' %' : '–',
         d: delta(cur && cur.itm, prev && prev.itm, true, pts) },
       { label: 'Bilan', now: cur ? `<span class="${signCls(cur.net)}">${net(cur.net)}</span>` : '–', prev: prev ? net(prev.net) : '–',
         d: delta(cur && cur.net, prev && prev.net, true, eur) }
@@ -1552,7 +1556,7 @@
         <div class="f-name">${f.label}${best ? ' <span class="f-star">★</span>' : ''}</div>
         <div class="f-range">${f.sub}</div>
         <div class="f-big">${s ? fmtPct(s.avg) : '–'}</div>
-        <div class="f-line">ITM <b>${s ? Math.round(s.itm) + ' %' : '–'}</b></div>
+        <div class="f-line">ITM <b>${s && s.itm != null ? Math.round(s.itm) + ' %' : '–'}</b></div>
         <div class="f-line ${s ? signCls(s.net) : ''}"><b>${s ? eur(s.net) : '–'}</b></div>
         <div class="f-count">${s ? s.count + ' tournoi' + (s.count > 1 ? 's' : '') : 'aucun'}</div>
       </div>`;
@@ -1663,7 +1667,7 @@
         <div class="f-name">${g.label}${best ? ' <span class="f-star">★</span>' : ''}</div>
         <div class="f-range">${g.sub}</div>
         <div class="f-big">${s ? fmtPct(s.avg) : '–'}</div>
-        <div class="f-line">ITM <b>${s ? Math.round(s.itm) + ' %' : '–'}</b></div>
+        <div class="f-line">ITM <b>${s && s.itm != null ? Math.round(s.itm) + ' %' : '–'}</b></div>
         <div class="f-line ${s ? signCls(s.net) : ''}"><b>${s ? eur(s.net) : '–'}</b></div>
         <div class="f-count">${s ? s.count + ' tournoi' + (s.count > 1 ? 's' : '') : 'aucun'}</div>
       </div>`;
@@ -1676,6 +1680,7 @@
 
   // ---------- Séries ----------
   function renderSeries(list) {
+    list = list.filter(itmCounted);     // tournois à 1 seule place payée ignorés
     if (!list.length) { $('series').innerHTML = '<div class="s-empty">Ajoute des tournois pour voir tes séries.</div>'; return; }
     // Parcours chronologique : plus longues suites ITM / sans ITM, avec leurs dates
     let best = { n: 0 }, worst = { n: 0 }, run = null;
@@ -2218,9 +2223,11 @@
   // ---------- Modale (ajout / modification) ----------
   // ---------- Suggestions de noms ----------
   // Noms déjà utilisés, classés par nombre d'utilisations puis par date ; on garde le dernier tournoi de chaque nom
-  function knownNames() {
+  // Noms déjà utilisés sur une plateforme donnée (celle choisie dans la fenêtre)
+  function knownNames(platform) {
     const map = new Map();
     tournaments.forEach(t => {
+      if (platform && t.platform !== platform) return;
       const name = (t.name || '').trim();
       if (!name) return;
       const k = norm(name);
@@ -2235,7 +2242,7 @@
     const box = $('name-sugg');
     const typed = $('m-name').value.trim();
     const q = norm(typed);
-    let list = knownNames();
+    let list = knownNames($('m-platform').value);
     // Déjà le nom exact : pas besoin de suggérer
     if (q && list.some(e => norm(e.name) === q)) list = [];
     else if (q) list = list.filter(e => norm(e.name).includes(q))
@@ -2250,6 +2257,7 @@
     box._list = list;
   }
   $('m-name').addEventListener('input', renderNameSugg);
+  $('m-platform').addEventListener('change', renderNameSugg);   // suggestions de la plateforme choisie
   $('m-name').addEventListener('focus', renderNameSugg);
   // Laisse le temps au toucher sur une suggestion avant de la cacher
   $('m-name').addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== $('m-name')) $('name-sugg').hidden = true; }, 150));
