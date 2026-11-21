@@ -1213,7 +1213,6 @@
   const itmCounted = (t) => !(ui.itmMinOn && ui.itmMinPaid > 1 && t.paid && t.paid < ui.itmMinPaid);   // interrupteur des Filtres
   const itmRate = (arr) => { const a = arr.filter(itmCounted); return a.length ? a.filter(itmOf).length / a.length * 100 : null; };
   const netOf = (t) => Math.round((gainOf(t) - buyinOf(t)) * 100) / 100;
-  const signCls = (n) => n < 0 ? 'neg' : 'pos';
   const eurCls = (n) => n < 0 ? 'neg' : n > 0 ? 'gold' : '';   // montants en € : positif en or, négatif en rouge, 0 neutre
   const fmtNet = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + fmtEur(Math.abs(n));
   const fmtPct = (v) => (v < 1 ? v.toFixed(2) : v < 10 ? v.toFixed(1) : v.toFixed(0)).replace('.', ',') + ' %';
@@ -1474,7 +1473,7 @@
     // Zone ITM : pour chaque tournoi dont on connaît les joueurs payés, une bande grise discrète
     // du haut du graphique (0 %) jusqu'à la part de joueurs payés (ex. 800 / 5 404 = 15 %)
     const zones = list.map(t => t.paid ? Math.min(100, t.paid / t.players * 100) : null);
-    // Voile vert pleine largeur en dégradé, jusqu'au niveau du dernier joueur payé
+    // Voile doré pleine largeur en dégradé, jusqu'au niveau du dernier joueur payé
     options.plugins.itmZone = { zones, color: css('--gold') };   // voiles ITM dorés
     if (chart) {
       chart.data = data;
@@ -1505,14 +1504,14 @@
         if (z == null) return;
         const cx = x.getPixelForValue(i);
         const bottom = y.getPixelForValue(z);       // hauteur du dernier joueur payé
-        // Voile vert : ≈ 35 % en haut (place 0 %), transparent en bas (limite des payés)
+        // Voile doré : ≈ 35 % en haut (place 0 %), transparent en bas (limite des payés)
         const g = ctx.createLinearGradient(0, top, 0, bottom);
         g.addColorStop(0, opts.color + '59');
         g.addColorStop(1, opts.color + '00');   // bas du voile : transparent
         ctx.fillStyle = g;
         // Voile pleine largeur de la colonne du tournoi, du haut jusqu'à la limite des payés
         ctx.fillRect(cx - topW / 2, Math.min(top, bottom), topW, Math.abs(bottom - top));
-        // Trait vert continu, le plus fin possible (1 pixel physique de l'écran) à la limite des places payées
+        // Trait doré continu, le plus fin possible (1 pixel physique de l'écran) à la limite des places payées
         const hy = (Math.round(bottom * dpr) + 0.5) / dpr;
         ctx.strokeStyle = opts.color; ctx.lineWidth = 1 / dpr;
         ctx.beginPath(); ctx.moveTo(cx - topW / 2, hy); ctx.lineTo(cx + topW / 2, hy); ctx.stroke();
@@ -1582,7 +1581,7 @@
     // Montants arrondis à l'euro au-delà de 100 € pour tenir dans la colonne
     const eur = (v) => fmtEur(Math.abs(v) >= 100 ? Math.round(v) : v);
     const net = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + eur(Math.abs(v));
-    // Écart : ▲ vert = mieux, ▼ rouge = moins bien ; better = true si la hausse est une amélioration
+    // Écart : ▲ or = mieux, ▼ couleur négative = moins bien ; better = true si la hausse est une amélioration
     const delta = (c, p, better, fmt) => {
       if (c == null || p == null) return '<div class="c2-d flat">–</div>';
       const d = c - p;
@@ -1755,7 +1754,9 @@
   // ---------- Profondeur dans l'argent ----------
   // Pour les tournois ITM dont on connaît les joueurs payés : position parmi les payés
   // (place / payés : proche de 0 % = très loin dans l'argent, proche de 100 % = min-cash)
-  const depthOf = (t) => (itmOf(t) && t.paid >= 1 && t.place <= t.paid) ? t.place / t.paid * 100 : null;
+  // Profondeur parmi les payés (en % : petit = loin dans l'argent).
+  // 1 seule place payée (1er sur 1) = victoire → max-cash (0 %).
+  const depthOf = (t) => (itmOf(t) && t.paid >= 1 && t.place <= t.paid) ? (t.paid === 1 ? 0 : t.place / t.paid * 100) : null;
   function depthHtml(list) {
     const items = list.filter(t => depthOf(t) != null);
     const itmCount = list.filter(itmOf).length;
@@ -1808,6 +1809,7 @@
       <div class="bub-leg">Sorti dans les 10&nbsp;% de places juste avant l'ITM</div>`;
   }
   function renderDepth(list) {
+    list = list.filter(itmCounted);     // seuil « Statistiques ITM » des Filtres (si activé)
     const items = list.filter(t => depthOf(t) != null);
     const known = list.filter(t => t.paid >= 1).length;
     $('depth-count').textContent = known ? `${known} avec payés` : '';
@@ -1878,7 +1880,7 @@
     });
     const dm = (d) => { const [, m, j] = d.split('-'); return `${+j}/${+m}`; };   // date courte : 22/8
     const range = (r) => !r.n ? '' : r.from === r.to ? 'le ' + dm(r.from) : `${dm(r.from)} → ${dm(r.to)}`;
-    // Bande des 20 derniers tournois : carré vert = ITM, carré vide = hors ITM (le plus récent à droite)
+    // Bande des 20 derniers tournois : carré doré = ITM, carré vide = hors ITM (le plus récent à droite)
     const last = list.slice(-20);
     $('series').innerHTML = `
       <div class="s-cols">
@@ -2245,11 +2247,11 @@
       const i = PLACE_BUCKETS.findIndex(b => r <= b.max);
       const k = i < 0 ? PLACE_BUCKETS.length - 1 : i;
       counts[k]++;
-      if (itmOf(t)) paid[k]++;
+      if (itmOf(t) && itmCounted(t)) paid[k]++;   // seuil « Statistiques ITM » : ces tournois comptent comme hors ITM
     });
     const maxC = Math.max(1, ...counts);
     const n = list.length;
-    // Histogramme vertical : vert = ITM (en bas), doré = hors ITM (au-dessus)
+    // Histogramme vertical : or = ITM (en bas), blanc = hors ITM (au-dessus)
     $('dist').innerHTML = PLACE_BUCKETS.map((b, i) => {
       const h = counts[i] / maxC * 100;
       const hPaid = counts[i] ? h * paid[i] / counts[i] : 0;
