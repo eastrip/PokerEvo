@@ -96,11 +96,15 @@
   .toolbar .chip .lbl { overflow: hidden; text-overflow: ellipsis; }
   .toolbar .chip .lbl-s { display: none; }
   /* Bouton PStars : pictogramme à la place du texte (texte de secours si l'image ne charge pas) */
-  .toolbar .chip .chip-logo { display: none; height: 24px; width: auto; max-width: 100%; }
+  /* Picto recoloré dans la couleur du bouton (masque) : bleu PStars, gris si désactivé */
+  .toolbar .chip .chip-logo-src { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .toolbar .chip .chip-logo {
+    display: none; width: 26px; height: 24px; background-color: currentColor;
+    -webkit-mask: url("https://upload.wikimedia.org/wikipedia/commons/4/44/PokerStars_emblem.svg") center / contain no-repeat; mask: url("https://upload.wikimedia.org/wikipedia/commons/4/44/PokerStars_emblem.svg") center / contain no-repeat;
+  }
   .toolbar .chip.has-logo { position: relative; }
   .toolbar .chip.has-logo .chip-logo { display: block; }
   .toolbar .chip.has-logo .lbl, .toolbar .chip.has-logo .lbl-s { display: none !important; }
-  .toolbar .chip.has-logo.off .chip-logo, .toolbar .chip.has-logo.empty .chip-logo { filter: grayscale(1); opacity: .4; }
   .toolbar .chip.has-logo.off::after { content: ''; position: absolute; left: 22%; right: 22%; top: 50%; height: 2px; margin-top: -1px; background: rgba(255,255,255,.55); transform: rotate(-20deg); border-radius: 1px; }
   .toolbar .save-btn { width: 38px; height: 38px; border-radius: 11px; position: relative; }
   .toolbar .save-btn svg { width: 20px; height: 20px; }
@@ -726,7 +730,7 @@
     <div class="toolbar">
       <div class="filters" role="group" aria-label="Filtrer par plateforme">
         <button class="chip" data-filter="Winamax" aria-label="Winamax"><span class="lbl">Wnmx</span><span class="lbl-s" aria-hidden="true">WM</span></button>
-        <button class="chip has-logo" data-filter="PokerStars" aria-label="PokerStars"><img class="chip-logo" src="https://upload.wikimedia.org/wikipedia/commons/4/44/PokerStars_emblem.svg" alt="" aria-hidden="true" onerror="this.closest('.chip').classList.remove('has-logo')"><span class="lbl">PStars</span><span class="lbl-s" aria-hidden="true">PS</span></button>
+        <button class="chip has-logo" data-filter="PokerStars" aria-label="PokerStars"><img class="chip-logo-src" src="https://upload.wikimedia.org/wikipedia/commons/4/44/PokerStars_emblem.svg" alt="" aria-hidden="true" onerror="this.closest('.chip').classList.remove('has-logo')"><span class="chip-logo" aria-hidden="true"></span><span class="lbl">PStars</span><span class="lbl-s" aria-hidden="true">PS</span></button>
       </div>
       <button class="save-btn" id="filter-btn" aria-label="Filtres">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
