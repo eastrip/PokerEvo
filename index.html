@@ -95,6 +95,13 @@
   .toolbar .chip.off, .toolbar .chip.empty { color: rgba(255,255,255,.4); border-color: rgba(255,255,255,.18); }
   .toolbar .chip .lbl { overflow: hidden; text-overflow: ellipsis; }
   .toolbar .chip .lbl-s { display: none; }
+  /* Bouton PStars : pictogramme à la place du texte (texte de secours si l'image ne charge pas) */
+  .toolbar .chip .chip-logo { display: none; height: 24px; width: auto; max-width: 100%; }
+  .toolbar .chip.has-logo { position: relative; }
+  .toolbar .chip.has-logo .chip-logo { display: block; }
+  .toolbar .chip.has-logo .lbl, .toolbar .chip.has-logo .lbl-s { display: none !important; }
+  .toolbar .chip.has-logo.off .chip-logo, .toolbar .chip.has-logo.empty .chip-logo { filter: grayscale(1); opacity: .4; }
+  .toolbar .chip.has-logo.off::after { content: ''; position: absolute; left: 22%; right: 22%; top: 50%; height: 2px; margin-top: -1px; background: rgba(255,255,255,.55); transform: rotate(-20deg); border-radius: 1px; }
   .toolbar .save-btn { width: 38px; height: 38px; border-radius: 11px; position: relative; }
   .toolbar .save-btn svg { width: 20px; height: 20px; }
   .toolbar .save-btn.add { background: #fff; color: #0b0b0b; border-color: #fff; }
@@ -281,11 +288,18 @@
   .hero-v { font-size: 2rem; font-weight: 750; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
   .hero-side { text-align: right; color: var(--text-2); font-size: .78rem; line-height: 1.55; font-variant-numeric: tabular-nums; }
   .hero-side strong { font-weight: 650; }
-  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); padding-top: 10px; }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); }
   .kpis > div { padding: 0 8px; border-left: 1px solid var(--border); min-width: 0; }
   .kpis > div:first-child { padding-left: 0; border-left: 0; }
   .kpis > div:last-child { padding-right: 0; }
   .k-v { font-size: 1.15rem; font-weight: 700; margin-top: 1px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* Rappel du seuil ITM actif (Filtres > Statistiques ITM) */
+  .k-itm { display: flex; align-items: center; gap: 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .k-itm-v { flex: none; min-width: 64px; }
+  .k-itm-side { flex: 1; min-width: 0; padding-left: 14px; border-left: 1px solid var(--border); align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+  .k-itm-sub { color: var(--text-2); font-size: .82rem; font-variant-numeric: tabular-nums; }
+  .k-note { color: var(--muted); font-size: .72rem; line-height: 1.3; }
+  .k-note[hidden] { display: none; }
   .k-sub { color: var(--muted); font-size: .68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 1em; }
   .k-sub .dot { width: 7px; height: 7px; margin-right: 2px; vertical-align: 0; }
 
@@ -327,7 +341,7 @@
   [data-key="bilan"] .card-head { margin-bottom: 4px; }
   .bilan-box { position: relative; height: 140px; touch-action: pan-y; }
   .bilan-box .empty { padding: 40px 10px; }
-  .bilan-total { font-weight: 750; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+  [data-key="bilan"] .hero { margin: 6px 0 10px; }
   .bilan-info { color: var(--muted); font-size: .74rem; margin-bottom: 8px; min-height: 1.2em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
   .bilan-info b { font-weight: 650; }
   .bilan-info .sel { color: var(--text-2); }
@@ -712,7 +726,7 @@
     <div class="toolbar">
       <div class="filters" role="group" aria-label="Filtrer par plateforme">
         <button class="chip" data-filter="Winamax" aria-label="Winamax"><span class="lbl">Wnmx</span><span class="lbl-s" aria-hidden="true">WM</span></button>
-        <button class="chip" data-filter="PokerStars" aria-label="PokerStars"><span class="lbl">PStars</span><span class="lbl-s" aria-hidden="true">PS</span></button>
+        <button class="chip has-logo" data-filter="PokerStars" aria-label="PokerStars"><img class="chip-logo" src="https://upload.wikimedia.org/wikipedia/commons/4/44/PokerStars_emblem.svg" alt="" aria-hidden="true" onerror="this.closest('.chip').classList.remove('has-logo')"><span class="lbl">PStars</span><span class="lbl-s" aria-hidden="true">PS</span></button>
       </div>
       <button class="save-btn" id="filter-btn" aria-label="Filtres">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -749,18 +763,18 @@
 
   <!-- Chiffres clés : bilan en vedette + 4 indicateurs compacts -->
   <div class="card kpi-card" data-key="kpi">
-    <div class="hero">
-      <div>
-        <div class="k-label">Bilan</div>
-        <div class="hero-v pos" id="s-gain">0 €</div>
-      </div>
-      <div class="hero-side" id="s-gain-sub"></div>
-    </div>
     <div class="kpis">
       <div><div class="k-label">Tournois</div><div class="k-v" id="s-count">0</div><div class="k-sub" id="s-count-sub"></div></div>
       <div><div class="k-label">Place moy.</div><div class="k-v" id="s-avg">–</div><div class="k-sub">top du field</div></div>
       <div><div class="k-label">Meilleur</div><div class="k-v" id="s-best">–</div><div class="k-sub" id="s-best-sub"></div></div>
-      <div><div class="k-label">ITM</div><div class="k-v" id="s-itm">–</div><div class="k-sub" id="s-itm-sub"></div></div>
+    </div>
+    <!-- ITM sur sa propre ligne, avec le rappel du seuil des Filtres -->
+    <div class="k-itm">
+      <div class="k-itm-v"><div class="k-label">ITM</div><div class="k-v" id="s-itm">–</div></div>
+      <div class="k-itm-side">
+        <div class="k-itm-sub" id="s-itm-sub"></div>
+        <div class="k-note" id="s-itm-note" hidden></div>
+      </div>
     </div>
   </div>
 
@@ -825,7 +839,13 @@
   <div class="card" data-key="bilan">
     <div class="card-head">
       <h2 class="fold"><span class="chev" aria-hidden="true">›</span>Bilan cumulé</h2>
-      <span class="bilan-total" id="bilan-total"></span>
+    </div>
+    <div class="hero">
+      <div>
+        <div class="k-label">Bilan</div>
+        <div class="hero-v pos" id="s-gain">0 €</div>
+      </div>
+      <div class="hero-side" id="s-gain-sub"></div>
     </div>
     <div class="bilan-info" id="bilan-info"></div>
     <div class="bilan-box">
@@ -1253,6 +1273,7 @@
     if (!list.length) {
       ['s-avg', 's-best', 's-itm'].forEach(id => $(id).textContent = '–');
       ['s-best-sub', 's-itm-sub'].forEach(id => $(id).textContent = '');
+      $('s-itm-note').hidden = true;
       return;
     }
     const avg = list.reduce((s, t) => s + ratio(t), 0) / list.length;
@@ -1264,7 +1285,11 @@
     const counted = list.filter(itmCounted);
     const itm = counted.filter(itmOf).length;
     $('s-itm').textContent = counted.length ? Math.round(itm / counted.length * 100) + ' %' : '–';
-    $('s-itm-sub').textContent = counted.length ? `${itm} sur ${counted.length}` : '';
+    $('s-itm-sub').textContent = counted.length ? `${itm} tournoi${itm > 1 ? 's' : ''} ITM sur ${counted.length}` : 'Aucun tournoi compté';
+    // Rappel quand le minimum de joueurs payés est actif
+    const minOn = ui.itmMinOn && ui.itmMinPaid > 1;
+    $('s-itm-note').hidden = !minOn;
+    $('s-itm-note').textContent = minOn ? `Ne compte pas les tournois de moins de ${ui.itmMinPaid} places payées` : '';
   }
 
   // L'ancien sélecteur de période (30 j / 3 mois) est remplacé par le filtre de dates (visible()) :
@@ -1332,6 +1357,8 @@
         {
           label: 'Place (% du field)',
           data: values,
+          order: 0,       // dessinée en dernier : les points passent au-dessus des lignes de moyenne
+          clip: false,    // les points à 0 % ou au bord du graphique ne sont pas coupés
           borderColor: lineColor,
           borderWidth: 1.25,
           tension: 0.25,
@@ -1350,6 +1377,7 @@
         {
           label: 'Place moyenne',
           data: values.map(() => avg),
+          order: 2,
           borderColor: css('--avg') + '80',   // 50 % d'opacité
           borderWidth: 0.75,
           borderDash: [5, 4],
@@ -1358,6 +1386,7 @@
         },
         {
           label: 'Moyenne des 10 derniers',
+          order: 1,
           data: showRolling ? pRolling.slice(w.start, w.end + 1) : [],
           borderColor: css('--rolling'),
           borderWidth: 1,
@@ -1376,7 +1405,7 @@
       animation: quick ? false : { duration: 250 },
       interaction: { mode: 'nearest', axis: 'x', intersect: false },
       events: ['click'],
-      layout: { padding: { right: 6 } },
+      layout: { padding: { top: 10, right: 10, left: 4 } },   // place pour les points au bord
       plugins: {
         legend: { display: false },
         tooltip: { enabled: false }
@@ -1399,6 +1428,8 @@
           ticks: { color: css('--text-2'), font: { size: 11 }, maxTicksLimit: 6, callback: v => v + ' %' }
         },
         x: {
+          // Chaque tournoi au centre de sa colonne : les voiles ITM du premier et du dernier sont entiers
+          offset: true,
           grid: { display: false },
           ticks: { color: css('--text-2'), font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 5 }
         }
@@ -1431,7 +1462,7 @@
       const top = y.getPixelForValue(0);
       // Le voile prend toute la largeur de la colonne du tournoi (petit espace entre deux tournois)
       const n = zones.length;
-      const step = n > 1 ? Math.abs(x.getPixelForValue(1) - x.getPixelForValue(0)) : (a.right - a.left);
+      const step = n > 1 ? Math.abs(x.getPixelForValue(1) - x.getPixelForValue(0)) : Math.min(60, a.right - a.left);
       const topW = Math.max(W, step - 2);
       ctx.save();
       ctx.beginPath(); ctx.rect(a.left, a.top, a.right - a.left, a.bottom - a.top); ctx.clip();
@@ -1569,9 +1600,6 @@
     const canvas = $('bilan-chart');
     let run = 0;
     const cumulAll = list.map(t => (run = Math.round((run + netOf(t)) * 100) / 100));
-    const total = cumulAll.length ? cumulAll[cumulAll.length - 1] : 0;
-    $('bilan-total').textContent = list.length ? fmtNet(total) : '';
-    $('bilan-total').className = 'bilan-total ' + signCls(total);
     $('bilan-empty').hidden = list.length > 0;
     canvas.style.display = list.length ? 'block' : 'none';
     let bilanSelAll = list.findIndex(t => t.id === bilanSelId);
@@ -1613,6 +1641,7 @@
       datasets: [{
         label: 'Bilan cumulé',
         data: cumul,
+        clip: false,      // points au bord non coupés
         borderWidth: 1.75,
         tension: 0.2,
         // Vert au-dessus de 0, rouge en dessous
@@ -1633,6 +1662,7 @@
       animation: quick ? false : { duration: 250 },
       events: ['click'],
       interaction: { mode: 'nearest', axis: 'x', intersect: false },
+      layout: { padding: { top: 8, right: 8, left: 4 } },   // place pour les points au bord
       plugins: { legend: { display: false }, tooltip: { enabled: false } },
       onClick: (evt, _els, ch) => {
         const hit = ch.getElementsAtEventForMode(evt, 'nearest', { axis: 'x', intersect: false }, false)[0];
@@ -2009,10 +2039,10 @@
 
   // ---------- Préférences : cartes affichées ----------
   const CARD_NAMES = {
-    kpi: ['Bilan et chiffres clés', 'Bilan, tournois, place, ITM'],
+    kpi: ['Chiffres clés', 'Tournois, place, meilleur, ITM'],
     compare: ['Ce mois-ci', 'Comparaison avec le mois dernier'],
     progression: ['Progression', 'Graphique des places'],
-    bilan: ['Bilan cumulé', 'Courbe de ton argent'],
+    bilan: ['Bilan cumulé', 'Bilan, gains, buy-ins et courbe de ton argent'],
     field: ['Par taille de field', 'Petits, moyens, gros tournois'],
     dist: ['Répartition des places', 'Histogramme par tranche'],
     stack: ['Par stack de départ', 'Résultats selon le stack'],
@@ -2264,7 +2294,7 @@
         g.moved = true;
         e.preventDefault();
         if (g.w.count >= g.w.total) return;
-        const step = area() / Math.max(1, g.w.count - 1);
+        const step = area() / Math.max(1, g.w.count);   // largeur d'une colonne de tournoi
         setView(g.w.count, g.w.end - dx / step, true);
       } else if (g.mode === 'pinch' && e.touches.length === 2) {
         e.preventDefault();
