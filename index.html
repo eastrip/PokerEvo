@@ -25,8 +25,8 @@
     --muted: #8a8984;
     --grid: #ecebe7;
     --accent: #0b0b0b;
-    --winamax: #e30613;     /* rouge vif */
-    --pokerstars: #1d4ed8;  /* bleu royal */
+    --winamax: #e50914;     /* rouge du logo Winamax (IMG_2291.png) */
+    --pokerstars: #56ba9e;  /* vert PokerStars */
     --avg: #52514e;
     --danger: #c4312f;
     --itm: #0f8a3c;
@@ -46,8 +46,8 @@
       --muted: #8f8e88;
       --grid: #2a2a28;
       --accent: #f0efec;
-      --winamax: #ff2d3a;
-      --pokerstars: #4f7df3;
+      --winamax: #e50914;
+      --pokerstars: #56ba9e;
       --avg: #c3c2b7;
       --danger: #ff6b6b;
       --itm: #22a855;
@@ -90,8 +90,8 @@
   .toolbar .chip { min-width: 0; min-height: 38px; padding: 0 5px; font-size: .78rem; border-radius: 11px;
                    background: rgba(0,0,0,.35); border: 1.5px solid currentColor; box-shadow: none; }
   /* L'en-tête est toujours sombre : teintes vives des plateformes, même en mode clair */
-  .toolbar .chip[data-filter="Winamax"] { color: #ff2d3a; }
-  .toolbar .chip[data-filter="PokerStars"] { color: #4f7df3; }
+  .toolbar .chip[data-filter="Winamax"] { color: var(--winamax); }
+  .toolbar .chip[data-filter="PokerStars"] { color: var(--pokerstars); }
   .toolbar .chip.off, .toolbar .chip.empty { color: rgba(255,255,255,.4); border-color: rgba(255,255,255,.18); }
   .toolbar .chip .lbl { overflow: hidden; text-overflow: ellipsis; }
   .toolbar .chip .lbl-s { display: none; }
@@ -100,8 +100,11 @@
   .toolbar .chip .chip-logo-src { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
   .toolbar .chip .chip-logo {
     display: none; width: 26px; height: 24px; background-color: currentColor;
-    -webkit-mask: url("https://upload.wikimedia.org/wikipedia/commons/4/44/PokerStars_emblem.svg") center / contain no-repeat; mask: url("https://upload.wikimedia.org/wikipedia/commons/4/44/PokerStars_emblem.svg") center / contain no-repeat;
+    -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat;
   }
+  /* Logos stockés à côté d'index.html sur GitHub, peints à la couleur du bouton */
+  .toolbar .chip[data-filter="Winamax"] .chip-logo { width: 24px; height: 22px; -webkit-mask-image: url("IMG_2291.png"); mask-image: url("IMG_2291.png"); }
+  .toolbar .chip[data-filter="PokerStars"] .chip-logo { -webkit-mask-image: url("IMG_2292.webp"); mask-image: url("IMG_2292.webp"); }
   .toolbar .chip.has-logo { position: relative; }
   .toolbar .chip.has-logo .chip-logo { display: block; }
   .toolbar .chip.has-logo .lbl, .toolbar .chip.has-logo .lbl-s { display: none !important; }
@@ -729,8 +732,8 @@
     <h1>PokerEvo</h1>
     <div class="toolbar">
       <div class="filters" role="group" aria-label="Filtrer par plateforme">
-        <button class="chip" data-filter="Winamax" aria-label="Winamax"><span class="lbl">Wnmx</span><span class="lbl-s" aria-hidden="true">WM</span></button>
-        <button class="chip has-logo" data-filter="PokerStars" aria-label="PokerStars"><img class="chip-logo-src" src="https://upload.wikimedia.org/wikipedia/commons/4/44/PokerStars_emblem.svg" alt="" aria-hidden="true" onerror="this.closest('.chip').classList.remove('has-logo')"><span class="chip-logo" aria-hidden="true"></span><span class="lbl">PStars</span><span class="lbl-s" aria-hidden="true">PS</span></button>
+        <button class="chip has-logo" data-filter="Winamax" aria-label="Winamax"><img class="chip-logo-src" src="IMG_2291.png" alt="" aria-hidden="true" onerror="this.closest('.chip').classList.remove('has-logo')"><span class="chip-logo" aria-hidden="true"></span><span class="lbl">Wnmx</span><span class="lbl-s" aria-hidden="true">WM</span></button>
+        <button class="chip has-logo" data-filter="PokerStars" aria-label="PokerStars"><img class="chip-logo-src" src="IMG_2292.webp" alt="" aria-hidden="true" onerror="this.closest('.chip').classList.remove('has-logo')"><span class="chip-logo" aria-hidden="true"></span><span class="lbl">PStars</span><span class="lbl-s" aria-hidden="true">PS</span></button>
       </div>
       <button class="save-btn" id="filter-btn" aria-label="Filtres">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
