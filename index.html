@@ -961,7 +961,7 @@
     </div>
     <div class="pref-list">
       <label class="pref-row pref-num">
-        <span>Minimum de joueurs payés<small>En dessous, le tournoi ne compte pas dans les stats ITM · vide = tous comptés</small></span>
+        <span>Minimum de joueurs payés<small>En dessous, le tournoi est masqué partout dans l'appli · vide = tous affichés</small></span>
         <input type="text" id="p-itm-min" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="…" aria-label="Nombre minimum de joueurs payés">
       </label>
     </div>
@@ -1251,6 +1251,7 @@
     return base
       .filter(t => { const to = fToEff(); return (!ui.fFrom || t.date >= ui.fFrom) && (!to || t.date <= to); })
       .filter(t => !names.length || names.includes(nameKey(t)))
+      .filter(itmCounted)   // « Statistiques ITM » activé : seuls les tournois avec assez de joueurs payés sont affichés, partout
       .sort((a, b) => a.date.localeCompare(b.date) || a.created - b.created);
   }
 
@@ -1264,8 +1265,10 @@
     });
     const fOn = filtersActive();
     // Plateforme active mais sans aucun tournoi retenu par les filtres : bouton grisé
+    // (le filtre « Statistiques ITM » peut lui aussi masquer tous les tournois d'une plateforme)
+    const anyFilter = fOn || (ui.itmMinOn && ui.itmMinPaid > 1);
     document.querySelectorAll('.chip').forEach(b => b.classList.toggle('empty',
-      fOn && !b.classList.contains('off') && !list.some(t => t.platform === b.dataset.filter)));
+      anyFilter && !b.classList.contains('off') && !list.some(t => t.platform === b.dataset.filter)));
     $('filter-btn').classList.toggle('on', fOn);
     $('filter-dot').hidden = !fOn;
     renderStats(list);
@@ -1320,7 +1323,7 @@
     // Rappel quand le minimum de joueurs payés est actif
     const minOn = ui.itmMinOn && ui.itmMinPaid > 1;
     $('s-itm-note').hidden = !minOn;
-    $('s-itm-note').textContent = minOn ? `Ne compte pas les tournois de moins de ${ui.itmMinPaid} places payées` : '';
+    $('s-itm-note').textContent = minOn ? `Tournois de moins de ${ui.itmMinPaid} places payées masqués` : '';
   }
 
   // L'ancien sélecteur de période (30 j / 3 mois) est remplacé par le filtre de dates (visible()) :
@@ -2211,7 +2214,7 @@
     const digits = el.value.replace(/\D/g, '');
     if (digits !== el.value) el.value = digits;
     ui.itmMinPaid = digits ? Math.min(100000, parseInt(digits, 10)) : 0;
-    saveUI(); render(true);
+    saveUI(); render(true); renderFilters();   // le compteur « X tournois affichés » suit
   });
   $('p-all').addEventListener('click', () => { ui.hiddenCards = {}; saveUI(); renderPref(); render(true); });
   $('p-order').addEventListener('click', () => {
