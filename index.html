@@ -117,8 +117,9 @@
   .toolbar .save-btn svg { width: 20px; height: 20px; }
   .toolbar .save-btn.add { background: var(--gold); color: #111; border-color: var(--gold); }
   .toolbar .save-btn.add svg { width: 22px; height: 22px; }
-  .tb-info { color: var(--text-2); font-size: .74rem; text-align: center; margin-top: 7px; min-height: 1em; font-variant-numeric: tabular-nums; }
-  .tb-info b { color: var(--text); font-weight: 700; }
+  /* L'en-tête est toujours sombre : texte clair, même en mode clair */
+  .tb-info { color: rgba(255,255,255,.72); font-size: .74rem; text-align: center; margin-top: 7px; min-height: 1em; font-variant-numeric: tabular-nums; }
+  .tb-info b { color: #fff; font-weight: 700; }
   .tb-hid { display: inline-flex; align-items: center; gap: 3px; vertical-align: -2px; }
   .tb-eye { width: 14px; height: 14px; }
   #filter-btn.on { border-color: var(--gold); color: var(--gold); }
@@ -153,6 +154,24 @@
   .f-switch input:checked + .switch::after { transform: translateX(20px); }
   .f-switch input:focus-visible + .switch { outline: 2px solid var(--gold); outline-offset: 2px; }
   .pref-row.pref-num.off { opacity: .4; }
+  /* Buy-in : Les deux / Payants / Gratuits */
+  /* Petit sélecteur sur la ligne du titre, comme l'interrupteur de « Statistiques ITM » */
+  .f-seg { display: inline-flex; gap: 2px; padding: 2px; border-radius: 9px; background: var(--border); flex: none; }
+  .f-seg button { -webkit-appearance: none; appearance: none; border: 0; height: 28px; min-height: 0; padding: 0 9px; border-radius: 7px; background: transparent;
+                  color: var(--text-2); font: inherit; font-size: .76rem; font-weight: 600; text-transform: none; letter-spacing: 0; cursor: pointer; white-space: nowrap; }
+  /* Buy-in et Statistiques ITM : deux lignes serrées, titre à gauche, réglage à droite */
+  .f-tight { margin: 12px 2px 0; min-height: 31px; }
+  .f-tight + .f-tight, .f-tight-hint + .f-tight { margin-top: 8px; }
+  .f-tight-hint { margin: 3px 2px 0; text-align: right; font-size: .7rem; }
+  .f-itm-ctl { display: inline-flex; align-items: center; gap: 8px; flex: none; }
+  .f-itm-min { flex-direction: row; align-items: center; gap: 5px; text-transform: none; letter-spacing: 0; font-weight: 600; }
+  .f-itm-min small { color: var(--muted); font-size: .72rem; }
+  .f-itm-min input { width: 52px; height: 32px; min-height: 0; padding: 0 6px; border-radius: 8px; text-align: center; font-size: 16px; }
+  .f-itm-min.off { opacity: .4; }
+  /* Interrupteur à la hauteur des boutons Buy-in (32 px) */
+  .f-switch-sm .switch { width: 52px; height: 32px; }
+  .f-switch-sm .switch::after { width: 28px; height: 28px; }
+  .f-seg button[aria-checked="true"] { background: var(--gold); color: #111; }
   .f-hint { color: var(--muted); font-size: .76rem; margin: 6px 2px 0; }
   .f-empty { padding: 14px; text-align: center; color: var(--muted); font-size: .88rem; }
   @media (max-width: 359px) {
@@ -239,6 +258,19 @@
   .search-clear[hidden] { display: none; }
   #l-sort { min-height: 42px; width: auto; font-size: 16px; padding-right: 30px; }
   .list-count { color: var(--muted); font-size: .76rem; margin: 0 2px 4px; min-height: 1em; }
+  /* Suppression groupée avant une date */
+  .link.bd-toggle { color: var(--danger); display: inline-flex; align-items: center; gap: 4px; font-size: .92rem; white-space: nowrap; }
+  #list-modal .modal-head { grid-template-columns: 100px 1fr 100px; }
+  .bd-toggle svg { width: 17px; height: 17px; flex: none; }
+  .bd-toggle[aria-expanded="true"] { font-weight: 700; }
+  .bd-zone { display: grid; gap: 8px; margin: 0 0 12px; padding: 10px; border-radius: 12px;
+             border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent); background: color-mix(in srgb, var(--danger) 7%, transparent); }
+  .bd-actions { display: grid; grid-template-columns: 1fr 1.6fr; gap: 8px; }
+  .bd-actions .btn { min-height: 44px; font-size: .92rem; }
+  .bd-zone[hidden] { display: none; }
+  .bd-info { color: var(--text-2); font-size: .8rem; margin: 0 2px; }
+  .bd-info b { color: var(--danger); }
+  .btn:disabled { opacity: .4; cursor: default; }
   .list mark { background: color-mix(in srgb, var(--rolling) 35%, transparent); color: inherit; border-radius: 3px; padding: 0 1px; }
 
   /* Réorganisation des cartes (appui long puis glisser) */
@@ -412,11 +444,42 @@
   .dp-bar .deep, .dp-legend .i-deep { background: linear-gradient(135deg, #e3c77a, #b8913a); }
   .dp-bar .mid, .dp-legend .i-mid { background: linear-gradient(135deg, #e4e6ea, #9ea3ab); }
   .dp-bar .min, .dp-legend .i-min { background: linear-gradient(135deg, #d99a63, #9a5a2c); }
+  /* Barre unique places payées + bulle */
+  .ub-bar { height: 22px; margin: 4px 0 4px; }
+  .ub-bar > div { min-width: 5px; }
+  .ub-bar .bub { background: var(--danger); }
+  .ub-bar .out { background: repeating-linear-gradient(135deg, var(--border) 0 1.5px, transparent 1.5px 6px); box-shadow: inset 0 0 0 1.5px var(--border); }
+  .ub-brace, .ub-num { display: flex; gap: 2px; font-variant-numeric: tabular-nums; }
+  .ub-brace { margin-top: 10px; font-size: .68rem; color: var(--text-2); }
+  .ub-brace > div, .ub-num > div { min-width: 5px; text-align: center; white-space: nowrap; overflow: hidden; }
+  .ub-brace .ub-itm { border-bottom: 1.5px solid #b8913a; padding-bottom: 2px; }
+  .ub-brace .ub-bub { border-bottom: 1.5px solid var(--danger); padding-bottom: 2px; color: var(--danger); overflow: visible; }   /* le % peut déborder sur la zone hors ITM, vide */
+  .ub-num { font-size: .74rem; color: var(--text); }
+  .ub-num .muted { color: var(--muted); }
+  .ub-sq { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: 0; }
+  .ub-ends { display: flex; justify-content: space-between; font-size: .66rem; color: var(--muted); margin: 1px 0 10px; }
   .dp-legend { display: grid; grid-template-columns: repeat(3, 1fr); font-size: .72rem; color: var(--text-2); font-variant-numeric: tabular-nums; }
   .dp-legend > div { min-width: 0; }
   .dp-legend > div:nth-child(2) { text-align: center; }
   .dp-legend > div:nth-child(3) { text-align: right; }
   .dp-legend b { display: block; color: var(--text); font-size: .9rem; }
+  .dp-legend b small { font-weight: 400; color: var(--muted); }
+  .dp-legend b.neg small { color: var(--muted) !important; }
+  .dp-legend4 { grid-template-columns: repeat(4, 1fr); }
+  .dp-legend4 > div:nth-child(2), .dp-legend4 > div:nth-child(3) { text-align: center; }
+  .dp-legend4 > div:nth-child(4) { text-align: right; }
+  .dp-legend .i-bub { background: var(--danger); }
+  .dp-legend4 > div { white-space: nowrap; }
+  @media (max-width: 359px) { .dp-legend4 { font-size: .64rem; } .dp-legend4 b { font-size: .82rem; } .dp-legend4 i { margin-right: 3px; } }
+  /* Petit bouton (i) : affiche / masque les explications */
+  .dp-sec-row { display: flex; align-items: center; justify-content: space-between; }
+  .info-btn { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; min-height: 0; padding: 0; border-radius: 50%; flex: none;
+              border: 1px solid var(--border); background: transparent; color: var(--text-2); font: italic 700 .78rem Georgia, serif; line-height: 20px; cursor: pointer; text-transform: none; letter-spacing: 0; }
+  .info-btn[aria-expanded="true"] { background: var(--gold); border-color: var(--gold); color: #111; }
+  .dp-info { background: var(--bg); border-radius: 10px; padding: 8px 10px; margin: 0 0 8px; color: var(--text-2); font-size: .74rem; line-height: 1.4; }
+  .dp-info[hidden] { display: none; }
+  .dp-info p { margin: 0 0 4px; } .dp-info p:last-child { margin: 0; }
+  .dp-info b { color: var(--text); font-weight: 650; }
   .dp-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; }
   .dp-empty { color: var(--muted); font-size: .82rem; }
   .dp-sec { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 6px; }
@@ -932,20 +995,30 @@
         <input type="date" id="f-to" aria-label="Au">
       </div>
     </div>
+    <!-- Buy-in puis Statistiques ITM juste dessous, en lignes serrées -->
+    <div class="f-sec f-tight"><span>Buy-in</span>
+      <div class="f-seg" id="f-paid" role="radiogroup" aria-label="Tournois payants ou gratuits">
+        <button type="button" role="radio" data-paid="all">Les deux</button>
+        <button type="button" role="radio" data-paid="paid">Payants</button>
+        <button type="button" role="radio" data-paid="free">Gratuits</button>
+      </div>
+    </div>
+    <p class="f-hint f-tight-hint" id="f-paid-n"></p>
+    <!-- Statistiques ITM : même hauteur que Buy-in (minimum de joueurs payés + interrupteur sur la ligne) -->
+    <div class="f-sec f-tight"><span>Statistiques ITM</span>
+      <div class="f-itm-ctl">
+        <label class="f-itm-min" id="p-itm-box"><small>min.</small>
+          <input type="text" id="p-itm-min" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="…" aria-label="Nombre minimum de joueurs payés">
+        </label>
+        <label class="f-switch f-switch-sm" aria-label="Statistiques ITM : activer le minimum de joueurs payés">
+          <input type="checkbox" id="p-itm-on"><span class="switch"></span>
+        </label>
+      </div>
+    </div>
+    <p class="f-hint f-tight-hint" id="p-itm-hint"></p>
     <div class="f-sec"><span id="f-names-title">Tournois</span><button type="button" class="link" id="f-all-names">Décocher</button></div>
     <div class="f-names" id="f-names"></div>
     <p class="f-hint">Coche un ou plusieurs tournois. Aucune case cochée = tous les tournois.</p>
-    <div class="f-sec"><span>Statistiques ITM</span>
-      <label class="f-switch" aria-label="Activer le minimum de joueurs payés">
-        <input type="checkbox" id="p-itm-on"><span class="switch"></span>
-      </label>
-    </div>
-    <div class="pref-list">
-      <label class="pref-row pref-num">
-        <span>Minimum de joueurs payés<small>En dessous, le tournoi est masqué partout dans l'appli · vide = tous affichés</small></span>
-        <input type="text" id="p-itm-min" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="…" aria-label="Nombre minimum de joueurs payés">
-      </label>
-    </div>
   </div>
 </div>
 
@@ -1009,11 +1082,24 @@
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="l-title">
     <div class="grabber" aria-hidden="true"></div>
     <div class="modal-head">
-      <span></span>
+      <button type="button" class="link bd-toggle" id="bd-toggle" aria-expanded="false" aria-controls="bd-zone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>Effacer…
+      </button>
       <h2 id="l-title">Mes tournois</h2>
       <button type="button" class="link strong" id="l-close">OK</button>
     </div>
     <div class="modal-sub" id="l-sub"></div>
+    <!-- Suppression groupée : tous les tournois joués avant une date (ouverte par « Effacer… » en haut à gauche) -->
+    <div class="bd-zone" id="bd-zone" hidden>
+      <label>Effacer tous les tournois joués avant le
+        <input type="date" id="bd-date">
+      </label>
+      <div class="bd-info" id="bd-info"></div>
+      <div class="bd-actions">
+        <button type="button" class="btn secondary" id="bd-cancel">Annuler</button>
+        <button type="button" class="btn danger" id="bd-go" disabled>Effacer</button>
+      </div>
+    </div>
     <div class="list-tools">
       <div class="search-wrap">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
@@ -1144,7 +1230,7 @@
   let tournaments = read(DATA_KEY, []);
   if (!Array.isArray(tournaments)) tournaments = [];
   // État de l'interface : filtre, modale ouverte (et sa saisie en cours), position de défilement
-  const ui = Object.assign({ filter: 'all', modal: null, listOpen: false, listSearch: '', listSort: 'recent', backupOpen: false, prefOpen: false, filterOpen: false, fFrom: '', fTo: '', fToToday: false, fNames: [], hiddenCards: {}, itmMinPaid: 2, itmMinOn: true, bilanEnd: null, lastExport: null, selectedId: null, view: { count: null, end: null }, period: 'all', collapsed: {}, cardOrder: null, scrollY: 0 }, read(UI_KEY, {}));
+  const ui = Object.assign({ filter: 'all', modal: null, listOpen: false, listSearch: '', listSort: 'recent', backupOpen: false, prefOpen: false, filterOpen: false, fFrom: '', fTo: '', fToToday: false, fPaid: 'all', fNames: [], hiddenCards: {}, itmMinPaid: 2, itmMinOn: true, bilanEnd: null, lastExport: null, selectedId: null, view: { count: null, end: null }, period: 'all', collapsed: {}, cardOrder: null, scrollY: 0 }, read(UI_KEY, {}));
   // Reprise des anciennes versions de la page
   if (!ui.modal && ui.editingId) ui.modal = { mode: 'edit', id: ui.editingId, values: ui.editDraft || null };
   delete ui.editingId; delete ui.editDraft; delete ui.draft;
@@ -1155,6 +1241,10 @@
   if (!isDay(ui.fFrom)) ui.fFrom = '';
   if (!isDay(ui.fTo)) ui.fTo = '';
   if (typeof ui.fToToday !== 'boolean') ui.fToToday = false;
+  // Buy-in : 'all' (les deux), 'paid' (payants), 'free' (gratuits) ; reprise de l'ancien « Payants uniquement »
+  if (ui.fPaidOnly === true) ui.fPaid = 'paid';
+  delete ui.fPaidOnly;
+  if (!['all', 'paid', 'free'].includes(ui.fPaid)) ui.fPaid = 'all';
   if (!Array.isArray(ui.fNames)) ui.fNames = [];
   ui.fNames = ui.fNames.filter(k => typeof k === 'string');
   ui.period = 'all';   // ancien sélecteur 30 j / 3 mois retiré : remplacé par le filtre de dates
@@ -1217,6 +1307,8 @@
   const nameKey = (t) => norm((t.name || '').trim());
   // Tournois des plateformes actives (Wnmx / PStars), avant les filtres
   const platformList = () => tournaments.filter(t => ui.filter === 'all' || t.platform === ui.filter);
+  // Plateformes actives + « Payants uniquement » (buy-in > 0) : base des filtres dates / noms
+  const typeList = () => platformList().filter(t => ui.fPaid === 'all' || (ui.fPaid === 'paid') === (buyinOf(t) > 0));
   // Noms cochés encore présents sur les plateformes actives (sinon : pas de filtre de nom)
   function activeNames(base) {
     if (!ui.fNames.length) return [];
@@ -1225,10 +1317,10 @@
   }
   // Fin de période : « Aujourd'hui » suit la date du jour, sinon la date choisie
   const fToEff = () => ui.fToToday ? today() : ui.fTo;
-  const filtersActive = () => !!(ui.fFrom || fToEff() || activeNames(platformList()).length);
+  const filtersActive = () => !!(ui.fPaid !== 'all' || ui.fFrom || fToEff() || activeNames(typeList()).length);
   // skipItm = true : sans le filtre « Statistiques ITM » (pour compter ce qu'il cache)
   function visible(skipItm) {
-    const base = platformList();
+    const base = typeList();
     const names = activeNames(base);
     return base
       .filter(t => { const to = fToEff(); return (!ui.fFrom || t.date >= ui.fFrom) && (!to || t.date <= to); })
@@ -1266,6 +1358,7 @@
     renderStats(list);
     renderChart(list, quick);
     renderList(list);
+    renderBulk();
     renderDetail(list);
     renderCompare(list);
     renderBilan(list, quick);
@@ -1743,7 +1836,7 @@
   // Profondeur parmi les payés (en % : petit = loin dans l'argent).
   // 1 seule place payée (1er sur 1) = victoire → max-cash (0 %).
   const depthOf = (t) => (itmOf(t) && t.paid >= 1 && t.place <= t.paid) ? (t.paid === 1 ? 0 : t.place / t.paid * 100) : null;
-  function depthHtml(list) {
+  function depthHtml(list, bub) {
     const items = list.filter(t => depthOf(t) != null);
     const itmCount = list.filter(itmOf).length;
     if (!items.length) {
@@ -1760,29 +1853,37 @@
     const pct = (n) => Math.round(n / depths.length * 100);
     const avgGain = items.reduce((s, t) => s + gainOf(t), 0) / items.length;
     return `
-      <div class="dp-sec">Profondeur quand tu es ITM</div>
+      <div class="dp-sec dp-sec-row"><span>Profondeur quand tu es ITM</span>
+        <button type="button" class="info-btn" aria-label="Explications" aria-expanded="false" data-info>i</button></div>
+      <div class="dp-info" hidden>
+        <p><b>Max-cash</b> = top 20 % des payés · <b>Min-cash</b> = dernier 20 % des payés · <b>Milieu</b> = entre les deux.</p>
+        <p><b>Bulle</b> = sorti dans les 10 % de places juste avant l'ITM.</p>
+        <p>La barre range tous les tournois où les « joueurs payés » sont connus, de la 1re place à l'élimination tôt.${itmCount > items.length ? ` ${itmCount - items.length} ITM sans « joueurs payés » ne sont pas comptés.` : ''}</p>
+      </div>
       <div class="dp-top">
         <div><div class="k-label">Moyenne parmi les payés</div>
           <div class="dp-big"><small>Top</small>${fmtPct(avg)}</div></div>
         <div class="dp-side">Meilleure <b>${fmtInt(best.place)}e/${fmtInt(best.paid)}</b><br>Gain moyen <b class="gold">${fmtEur(Math.round(avgGain * 100) / 100)}</b></div>
       </div>
-      <div class="dp-bar">
-        ${deep ? `<div class="deep" style="flex:${deep}"></div>` : ''}
-        ${mid ? `<div class="mid" style="flex:${mid}"></div>` : ''}
-        ${min ? `<div class="min" style="flex:${min}"></div>` : ''}
-      </div>
-      <div class="dp-legend">
-        <div><i class="i-deep"></i>Max-cash<b>${deep} <small style="font-weight:400;color:var(--muted)">${pct(deep)} %</small></b></div>
-        <div><i class="i-mid"></i>Milieu<b>${mid} <small style="font-weight:400;color:var(--muted)">${pct(mid)} %</small></b></div>
-        <div><i class="i-min"></i>Min-cash<b>${min} <small style="font-weight:400;color:var(--muted)">${pct(min)} %</small></b></div>
-      </div>
-      <div class="hint">Max-cash = top&nbsp;20&nbsp;% des payés · Min-cash = dernier&nbsp;20&nbsp;%${itmCount > items.length ? ` · ${itmCount - items.length}&nbsp;ITM sans «&nbsp;joueurs payés&nbsp;»` : ''}</div>`;
+      %%BAR%%
+      <div class="dp-legend${bub ? ' dp-legend4' : ''}">
+        <div><i class="i-deep"></i>Max-cash<b>${deep} <small>${pct(deep)} %</small></b></div>
+        <div><i class="i-mid"></i>Milieu<b>${mid} <small>${pct(mid)} %</small></b></div>
+        <div><i class="i-min"></i>Min-cash<b>${min} <small>${pct(min)} %</small></b></div>
+        ${bub ? `<div><i class="i-bub"></i>Bulle<b class="${bub.n ? 'neg' : ''}">${bub.n} <small>${bub.rate} %</small></b></div>` : ''}
+      </div>`;
   }
 
   // ---------- Taux de bulle ----------
   // Bulle = fini juste après les places payées : entre payés + 1 et payés + 10 % (au moins 1 place)
   const bubbleZone = (paid) => Math.max(1, Math.ceil(paid * 0.1));
   const isBubble = (t) => t.paid >= 1 && t.place > t.paid && t.place <= t.paid + bubbleZone(t.paid);
+  function bubbleStats(list) {
+    const known = list.filter(t => t.paid >= 1 && t.paid <= t.players);
+    if (!known.length) return null;
+    const n = known.filter(isBubble).length;
+    return { n, of: known.length, rate: Math.round(n / known.length * 100) };
+  }
   function bubbleHtml(list) {
     const known = list.filter(t => t.paid >= 1 && t.paid <= t.players);
     if (!known.length) return '';
@@ -1790,18 +1891,69 @@
     const rate = Math.round(bub.length / known.length * 100);
     // Une seule ligne discrète ; la définition s'affiche au survol / appui long
     return `<div class="bub-mini">
-        <span>Taux de bulle</span><b class="${bub.length ? 'neg' : ''}">${rate}&nbsp;%</b><span class="bub-n">${bub.length}/${known.length}</span>
+        <span><i class="ub-sq" style="background:var(--danger)"></i>Taux de bulle</span><b class="${bub.length ? 'neg' : ''}">${rate}&nbsp;%</b><span class="bub-n">${bub.length}/${known.length}</span>
       </div>
       <div class="bub-leg">Sorti dans les 10&nbsp;% de places juste avant l'ITM</div>`;
+  }
+  // Bouton (i) des explications de « Places payées » (état mémorisé)
+  $('depth').addEventListener('click', e => {
+    const b = e.target.closest('[data-info]');
+    if (!b) return;
+    ui.depthInfo = !ui.depthInfo; saveUI();
+    const box = $('depth').querySelector('.dp-info');
+    if (box) box.hidden = !ui.depthInfo;
+    b.setAttribute('aria-expanded', String(!!ui.depthInfo));
+  });
+  // ---------- Barre unique : Max-cash · Milieu · Min-cash · Bulle · Hors ITM ----------
+  // Chaque tournoi avec « joueurs payés » connu tombe dans une seule case, dans l'ordre des places.
+  function uniBarHtml(list) {
+    const known = list.filter(t => t.paid >= 1 && t.paid <= t.players);
+    if (!known.length) return '';
+    const n = { deep: 0, mid: 0, min: 0, bub: 0, out: 0 };
+    known.forEach(t => {
+      const d = depthOf(t);
+      if (d != null) n[d <= 20 ? 'deep' : d > 80 ? 'min' : 'mid']++;
+      else if (isBubble(t)) n.bub++;
+      else n.out++;
+    });
+    const tot = known.length, itm = n.deep + n.mid + n.min;
+    const pct = (v) => Math.round(v / tot * 100);
+    // Largeur minimale pour qu'une petite catégorie reste visible ; chiffre masqué si la case est trop étroite
+    const seg = (k, cls) => n[k] ? `<div class="${cls}" style="flex:${n[k]}"></div>` : '';
+    const num = (k, cls = '') => n[k] ? `<div class="${cls}" style="flex:${n[k]}">${n[k] / tot >= 0.07 ? n[k] : ''}</div>` : '';
+    const bubLbl = n.bub / tot >= 0.14 ? 'Bulle' : pct(n.bub) + ' %';
+    return `
+      <div class="ub-brace">
+        ${itm ? `<div class="ub-itm" style="flex:${itm}">ITM ${pct(itm)} %</div>` : ''}
+        ${n.bub ? `<div class="ub-bub" style="flex:${n.bub}">${bubLbl}</div>` : ''}
+        ${n.out ? `<div style="flex:${n.out}"></div>` : ''}
+      </div>
+      <div class="dp-bar ub-bar">
+        ${seg('deep', 'deep')}${seg('mid', 'mid')}${seg('min', 'min')}${seg('bub', 'bub')}${seg('out', 'out')}
+      </div>
+      <div class="ub-num">${num('deep')}${num('mid')}${num('min')}${num('bub', 'neg')}${num('out', 'muted')}</div>
+      <div class="ub-ends"><span>1er</span><span>éliminé tôt</span></div>`;
   }
   function renderDepth(list) {
     list = list.filter(itmCounted);     // seuil « Statistiques ITM » des Filtres (si activé)
     const items = list.filter(t => depthOf(t) != null);
     const known = list.filter(t => t.paid >= 1).length;
     $('depth-count').textContent = known ? `${known} avec payés` : '';
-    const bub = bubbleHtml(list);
-    // Profondeur d'abord, taux de bulle tout à la fin
-    $('depth').innerHTML = (bub && !items.length && !list.some(itmOf) ? '' : depthHtml(list)) + bub;
+    const bs = bubbleStats(list);
+    const bar = uniBarHtml(list);
+    // Avec de la profondeur : la bulle rejoint la légende (Max-cash · Milieu · Min-cash · Bulle) ;
+    // sinon, la ligne « Taux de bulle » seule sous la barre
+    let html, tail = '';
+    if (items.length) html = depthHtml(list, bs);
+    else {
+      html = (list.some(itmOf) ? depthHtml(list) : '') ;
+      tail = bubbleHtml(list);
+    }
+    if (!html.includes('%%BAR%%')) html = '%%BAR%%' + html;
+    $('depth').innerHTML = html.replace('%%BAR%%', bar) + tail;
+    const box = $('depth').querySelector('.dp-info'), ib = $('depth').querySelector('[data-info]');
+    if (box) box.hidden = !ui.depthInfo;
+    if (ib) ib.setAttribute('aria-expanded', String(!!ui.depthInfo));
   }
 
   // ---------- Résultats par stack de départ ----------
@@ -2085,17 +2237,24 @@
   }
   // ---------- Fenêtre Filtres (dates + noms de tournois) ----------
   function renderFilters() {
-    const base = platformList();
+    const all = platformList(), base = typeList();
+    $('f-paid').querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.paid === ui.fPaid)));
+    const free = all.length - all.filter(t => buyinOf(t) > 0).length, paidN = all.length - free;
+    const pl = (n, w) => `${n} ${w}${n > 1 ? 's' : ''}`;
+    $('f-paid-n').textContent = `${pl(paidN, 'payant')} · ${pl(free, 'gratuit')} `;
     $('f-from').value = ui.fFrom; $('f-to').value = fToEff();
     $('f-to').disabled = ui.fToToday;
     $('f-today').setAttribute('aria-pressed', String(ui.fToToday));
     if (document.activeElement !== $('p-itm-min')) $('p-itm-min').value = ui.itmMinPaid > 0 ? String(ui.itmMinPaid) : '';
     $('p-itm-on').checked = ui.itmMinOn;
     $('p-itm-min').disabled = !ui.itmMinOn;
-    $('p-itm-min').closest('.pref-row').classList.toggle('off', !ui.itmMinOn);
+    $('p-itm-box').classList.toggle('off', !ui.itmMinOn);
+    const mp = ui.itmMinPaid;
+    $('p-itm-hint').textContent = !ui.itmMinOn ? 'Désactivé : tous les tournois sont affichés'
+      : mp > 1 ? `Masque les tournois à moins de ${mp} payés` : 'Vide ou 1 = tous les tournois affichés';
     $('f-from').max = fToEff() || ''; $('f-to').min = ui.fFrom || '';
     const n = visible().length;
-    $('f-sub').textContent = `${n} tournoi${n > 1 ? 's' : ''} affiché${n > 1 ? 's' : ''} sur ${base.length}`;
+    $('f-sub').textContent = `${n} tournoi${n > 1 ? 's' : ''} affiché${n > 1 ? 's' : ''} sur ${all.length}`;
     $('f-names-title').textContent = 'Tournois ' + (ui.filter === 'all' ? 'Wnmx et PStars' : ui.filter === 'Winamax' ? 'Wnmx' : 'PStars');
     // Noms des plateformes actives, du plus joué au moins joué
     const map = new Map();
@@ -2113,7 +2272,7 @@
         ${[...e.platforms].map(p => `<span class="dot" style="background:${color(p)}"></span>`).join('')}
         <span class="nm${e.k ? '' : ' none'}">${e.k ? esc(e.name) : 'Sans nom'}</span>
         <small>×${e.count}</small>
-      </label>`).join('') : '<div class="f-empty">Aucun tournoi sur cette plateforme.</div>';
+      </label>`).join('') : `<div class="f-empty">Aucun tournoi${ui.fPaid === 'paid' ? ' payant' : ui.fPaid === 'free' ? ' gratuit' : ''} sur cette plateforme.</div>`;
     $('f-all-names').disabled = !sel.size;
     $('f-all-dates').disabled = !ui.fFrom && !fToEff();
     $('f-reset').disabled = !filtersActive();
@@ -2156,12 +2315,17 @@
     if (ui.fToToday && ui.fFrom > today()) ui.fFrom = '';
     applyFilters();
   });
+  $('f-paid').addEventListener('click', e => {
+    const b = e.target.closest('[data-paid]');
+    if (!b || b.dataset.paid === ui.fPaid) return;
+    ui.fPaid = b.dataset.paid; applyFilters();
+  });
   $('f-all-names').addEventListener('click', () => { ui.fNames = []; applyFilters(); });
-  $('f-reset').addEventListener('click', () => { ui.fFrom = ''; ui.fTo = ''; ui.fToToday = false; ui.fNames = []; applyFilters(); });
+  $('f-reset').addEventListener('click', () => { ui.fFrom = ''; ui.fTo = ''; ui.fToToday = false; ui.fNames = []; ui.fPaid = 'all'; applyFilters(); });
   $('f-names').addEventListener('change', e => {
     const k = e.target.dataset.k;
     if (k == null) return;
-    const set = new Set(activeNames(platformList()));
+    const set = new Set(activeNames(typeList()));
     if (e.target.checked) set.add(k); else set.delete(k);
     ui.fNames = [...set];
     applyFilters();
@@ -2742,6 +2906,7 @@
   function closeList() {
     $('list-modal').hidden = true;
     ui.listOpen = false;
+    if (!$('bd-zone').hidden) setBulkOpen(false);   // la zone d'effacement se referme avec la fenêtre
     if (!anyModalOpen()) unlockScroll();
     saveUI();
   }
@@ -2752,6 +2917,50 @@
   $('l-sort').addEventListener('change', e => { ui.listSort = e.target.value; saveUI(); renderList(visible()); });
   $('l-close').addEventListener('click', closeList);
   $('list-modal').addEventListener('click', e => { if (e.target === $('list-modal')) closeList(); });
+
+  // ---------- Suppression groupée : tournois joués avant une date ----------
+  // Concerne la plateforme affichée (bouton Wnmx / PStars) ; les autres filtres ne comptent pas.
+  // Les tournois du jour choisi sont conservés (strictement « avant »).
+  const bulkTargets = () => { const d = $('bd-date').value; return isDay(d) ? platformList().filter(t => t.date < d) : []; };
+  function renderBulk() {
+    const d = $('bd-date').value, n = bulkTargets().length;
+    const s = n > 1 ? 's' : '';
+    const pf = ui.filter === 'all' ? '' : ' ' + ui.filter;
+    $('bd-info').innerHTML = !isDay(d)
+      ? `Choisis une date${pf ? ` (plateforme${pf} uniquement)` : ''}. Les tournois de ce jour-là sont conservés.`
+      : n ? `<b>${n} tournoi${s}${esc(pf)}</b> joué${s} avant le ${fmtDate(d)} ser${n > 1 ? 'ont' : 'a'} effacé${s}. Ceux du ${fmtDate(d)} sont conservés.`
+      : `Aucun tournoi${esc(pf)} avant le ${fmtDate(d)}.`;
+    $('bd-go').disabled = !n;
+    $('bd-go').textContent = n ? `Effacer ${n} tournoi${s}` : 'Effacer';
+  }
+  function setBulkOpen(open) {
+    $('bd-zone').hidden = !open;
+    $('bd-toggle').setAttribute('aria-expanded', String(open));
+    if (!open) $('bd-date').value = '';
+    renderBulk();
+    if (open) $('list-modal').querySelector('.modal').scrollTo({ top: 0, behavior: 'smooth' });   // la zone est en haut
+  }
+  $('bd-toggle').addEventListener('click', () => setBulkOpen($('bd-zone').hidden));
+  $('bd-cancel').addEventListener('click', () => setBulkOpen(false));
+  $('bd-date').addEventListener('input', renderBulk);
+  $('bd-date').addEventListener('change', renderBulk);
+  $('bd-go').addEventListener('click', () => {
+    const d = $('bd-date').value, targets = bulkTargets();
+    if (!targets.length) return;
+    const n = targets.length, s = n > 1 ? 's' : '';
+    const pf = ui.filter === 'all' ? '' : ' ' + ui.filter;
+    openSheet(`Effacer définitivement ${n} tournoi${s}${pf} joué${s} avant le ${fmtDate(d)} ? Pense à exporter une sauvegarde avant si tu veux pouvoir les récupérer.`, `Effacer ${n} tournoi${s}`, () => {
+      const ids = new Set(targets.map(t => t.id));
+      tournaments = tournaments.filter(t => !ids.has(t.id));
+      saveData();
+      if (ids.has(ui.selectedId)) ui.selectedId = null;
+      if (ids.has(bilanSelId)) { bilanSelId = null; ui.bilanSelId = null; }
+      ui.view = { count: null, end: null }; ui.bilanEnd = null;
+      saveUI();
+      setBulkOpen(false);
+      render();
+    });
+  });
   function lastPlatform() {
     const last = tournaments.slice().sort((a, b) => b.created - a.created)[0];
     return ui.filter !== 'all' ? ui.filter : (last ? last.platform : 'Winamax');
@@ -2898,7 +3107,7 @@
   const markExported = () => { ui.lastExport = Date.now(); saveUI(); renderBackupInfo(); };
 
   // ---------- Export / import ----------
-  const PREF_KEYS = ['hiddenCards', 'cardOrder', 'collapsed', 'filter', 'listSort', 'itmMinPaid', 'itmMinOn', 'fFrom', 'fTo', 'fToToday', 'fNames'];
+  const PREF_KEYS = ['hiddenCards', 'cardOrder', 'collapsed', 'filter', 'listSort', 'itmMinPaid', 'itmMinOn', 'fFrom', 'fTo', 'fToToday', 'fPaid', 'fNames'];
   const backupJson = () => JSON.stringify({
     app: 'PokerEvo', version: 2, exportedAt: new Date().toISOString(),
     tournaments,
@@ -3026,6 +3235,8 @@
         if (isDay(p.fFrom) || p.fFrom === '') ui.fFrom = p.fFrom;
         if (isDay(p.fTo) || p.fTo === '') ui.fTo = p.fTo;
         if (typeof p.fToToday === 'boolean') ui.fToToday = p.fToToday;
+        if (['all', 'paid', 'free'].includes(p.fPaid)) ui.fPaid = p.fPaid;
+        else if (typeof p.fPaidOnly === 'boolean') ui.fPaid = p.fPaidOnly ? 'paid' : 'all';   // anciennes sauvegardes
         if (Array.isArray(p.fNames)) ui.fNames = p.fNames.filter(k => typeof k === 'string');
         if (typeof p.itmMinOn === 'boolean') ui.itmMinOn = p.itmMinOn;
         if (Number.isInteger(p.itmMinPaid) && p.itmMinPaid >= 0 && p.itmMinPaid <= 100000) ui.itmMinPaid = p.itmMinPaid;
