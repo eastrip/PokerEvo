@@ -998,9 +998,9 @@
     <!-- Buy-in puis Statistiques ITM juste dessous, en lignes serrées -->
     <div class="f-sec f-tight"><span>Buy-in</span>
       <div class="f-seg" id="f-paid" role="radiogroup" aria-label="Tournois payants ou gratuits">
+        <button type="button" role="radio" data-paid="free">Gratuits</button>
         <button type="button" role="radio" data-paid="all">Les deux</button>
         <button type="button" role="radio" data-paid="paid">Payants</button>
-        <button type="button" role="radio" data-paid="free">Gratuits</button>
       </div>
     </div>
     <p class="f-hint f-tight-hint" id="f-paid-n"></p>
@@ -2241,7 +2241,7 @@
     $('f-paid').querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.paid === ui.fPaid)));
     const free = all.length - all.filter(t => buyinOf(t) > 0).length, paidN = all.length - free;
     const pl = (n, w) => `${n} ${w}${n > 1 ? 's' : ''}`;
-    $('f-paid-n').textContent = `${pl(paidN, 'payant')} · ${pl(free, 'gratuit')} `;
+    $('f-paid-n').textContent = `${pl(free, 'gratuit')} · ${pl(paidN, 'payant')}`;
     $('f-from').value = ui.fFrom; $('f-to').value = fToEff();
     $('f-to').disabled = ui.fToToday;
     $('f-today').setAttribute('aria-pressed', String(ui.fToToday));
