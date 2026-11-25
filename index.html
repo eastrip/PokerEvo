@@ -32,6 +32,7 @@
     --itm: #b8913a;       /* ITM et « mieux » : or (le vert a été remplacé par l'or) */
     --rolling: #b8913a;   /* moyenne des 10 derniers : même or que la couleur principale */
     --gold: #b8913a;      /* couleur principale : or foncé du dégradé doré */
+    --silver: #8c9099;    /* zone ITM du graphique : argent (plus foncé en mode clair pour rester visible) */
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
     --safe-left: env(safe-area-inset-left, 0px);
@@ -54,6 +55,7 @@
       --itm: #b8913a;
       --rolling: #b8913a;
       --gold: #b8913a;   /* or foncé du dégradé doré */
+      --silver: #b8bcc3; /* zone ITM : même argent que la courbe du bilan */
     }
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -211,6 +213,13 @@
   /* En-tête de la carte « Progression » avec le filtre à droite */
   .card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
   .card-head h2 { margin: 0; }
+  /* Bouton discret « 12 derniers » (carte Progression), visible seulement si le graphique a été zoomé ou déplacé */
+  .view-reset { -webkit-appearance: none; appearance: none; display: inline-flex; align-items: center; gap: 4px; flex: none;
+                height: 26px; padding: 0 9px; border-radius: 13px; border: 1px solid var(--border); background: transparent;
+                color: var(--text-2); font: inherit; font-size: .74rem; font-weight: 600; cursor: pointer; }
+  .view-reset svg { width: 12px; height: 12px; }
+  .view-reset[hidden] { display: none; }
+  .view-reset:active { color: var(--gold); border-color: var(--gold); }
   .filters {
     display: grid; grid-template-columns: auto auto;
     background: var(--border); padding: 2px; border-radius: 10px; gap: 2px;
@@ -373,7 +382,7 @@
   #b-range[hidden] { display: none; }
   .roll-line { width: 22px; height: 0; border-top: 2px dotted var(--rolling); display: inline-block; }
   .legend #lg-roll[hidden], .legend #lg-zone[hidden] { display: none; }
-  .zone-sw { position: relative; width: 16px; height: 14px; display: inline-block; background: linear-gradient(to bottom, color-mix(in srgb, var(--gold) 40%, transparent), transparent); border-bottom: 1px solid var(--gold); }
+  .zone-sw { position: relative; width: 16px; height: 14px; display: inline-block; background: linear-gradient(to bottom, color-mix(in srgb, var(--silver) 40%, transparent), transparent); border-bottom: 1px solid var(--silver); }
   @media (min-resolution: 2dppx) { .zone-sw { border-bottom-width: 0.5px; } }
   @media (min-resolution: 3dppx) { .zone-sw { border-bottom-width: 0.34px; } }
   [data-key="bilan"] .card-head { margin-bottom: 4px; }
@@ -431,6 +440,27 @@
   .f-line b { font-weight: 650; }
   .f-line.pos b, .f-line.neg b, .f-line.gold b { color: inherit; }
   .f-count { color: var(--muted); font-size: .68rem; margin-top: 3px; white-space: nowrap; }
+
+  /* Par tournoi (nom) : classement par place moyenne */
+  .nt-list { display: grid; gap: 4px; font-variant-numeric: tabular-nums; }
+  .nt-row { display: grid; grid-template-columns: 20px 1fr auto; align-items: center; column-gap: 8px; padding: 7px 10px 7px 8px; border-radius: 12px; background: var(--bg); }
+  .nt-row.nt-best { background: color-mix(in srgb, var(--gold) 12%, var(--bg)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 55%, transparent); }
+  .nt-row.nt-off { opacity: .55; }
+  .nt-rank { color: var(--muted); font-size: .78rem; font-weight: 700; text-align: center; }
+  .nt-best .nt-rank { color: var(--gold); }
+  .nt-main { min-width: 0; }
+  .nt-name { display: flex; align-items: center; gap: 5px; font-weight: 700; font-size: .88rem; min-width: 0; }
+  .nt-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nt-name .dot { width: 6px; height: 6px; flex: none; }
+  .nt-sub { color: var(--muted); font-size: .7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+  .nt-sub b { font-weight: 650; color: var(--text-2); }
+  .nt-sub b.pos, .nt-sub b.gold { color: var(--gold); }
+  .nt-sub b.neg { color: var(--danger); }
+  .nt-big { font-size: 1.02rem; font-weight: 750; letter-spacing: -0.01em; white-space: nowrap; text-align: right; }
+  .nt-big small { display: block; font-size: .56rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  .nt-more { -webkit-appearance: none; appearance: none; display: block; margin: 6px auto 0; padding: 4px 10px; border: 0; background: none;
+             color: var(--gold); font: inherit; font-size: .8rem; font-weight: 600; cursor: pointer; }
+  .nt-more[hidden] { display: none; }
 
   /* Profondeur dans l'argent */
   .dp-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
@@ -856,6 +886,9 @@
   <div class="card" data-key="progression">
     <div class="card-head">
       <h2 class="fold"><span class="chev" aria-hidden="true">›</span>Progression</h2>
+      <button type="button" class="view-reset" id="view-reset" hidden aria-label="Revenir aux 12 derniers tournois">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>12 derniers
+      </button>
     </div>
     <div class="legend">
       <span><span class="dash"></span>Moyenne</span>
@@ -929,6 +962,17 @@
     </div>
     <div class="ftable" id="field-table"></div>
     <div class="hint" id="field-hint"></div>
+  </div>
+
+  <!-- Résultats par tournoi (nom) : où je suis le meilleur -->
+  <div class="card" data-key="names">
+    <div class="card-head">
+      <h2 class="fold"><span class="chev" aria-hidden="true">›</span>Par tournoi</h2>
+      <span class="cmp-vs" id="names-count"></span>
+    </div>
+    <div class="nt-list" id="names-table"></div>
+    <button type="button" class="nt-more" id="names-more" hidden></button>
+    <div class="hint" id="names-hint"></div>
   </div>
 
   <!-- Résultats par stack de départ -->
@@ -1363,6 +1407,7 @@
     renderCompare(list);
     renderBilan(list, quick);
     renderFieldSizes(list);
+    renderNames(list);
     renderStacks(list);
     renderDepth(list);
     renderDistribution(list);
@@ -1418,7 +1463,7 @@
     const canvas = $('chart');
     $('empty').hidden = list.length > 0;
     canvas.style.display = list.length ? 'block' : 'none';
-    if (!window.Chart || !list.length) { $('zoom-bar').hidden = true; $('z-info').textContent = ''; }
+    if (!window.Chart || !list.length) { $('zoom-bar').hidden = true; $('z-info').textContent = ''; $('view-reset').hidden = true; }
     if (!window.Chart) {
       if (list.length) { $('empty').hidden = false; $('empty').textContent = 'Le graphique nécessite une connexion internet.'; }
       return;
@@ -1552,8 +1597,8 @@
     // Zone ITM : pour chaque tournoi dont on connaît les joueurs payés, une bande grise discrète
     // du haut du graphique (0 %) jusqu'à la part de joueurs payés (ex. 800 / 5 404 = 15 %)
     const zones = list.map(t => t.paid ? Math.min(100, t.paid / t.players * 100) : null);
-    // Voile doré pleine largeur en dégradé, jusqu'au niveau du dernier joueur payé
-    options.plugins.itmZone = { zones, color: css('--gold') };   // voiles ITM dorés
+    // Voile argent pleine largeur en dégradé, jusqu'au niveau du dernier joueur payé
+    options.plugins.itmZone = { zones, color: css('--silver') };   // voiles ITM argent
     if (chart) {
       chart.data = data;
       chart.options = options;
@@ -1583,14 +1628,14 @@
         if (z == null) return;
         const cx = x.getPixelForValue(i);
         const bottom = y.getPixelForValue(z);       // hauteur du dernier joueur payé
-        // Voile doré : ≈ 35 % en haut (place 0 %), transparent en bas (limite des payés)
+        // Voile argent : ≈ 35 % en haut (place 0 %), transparent en bas (limite des payés)
         const g = ctx.createLinearGradient(0, top, 0, bottom);
         g.addColorStop(0, opts.color + '59');
         g.addColorStop(1, opts.color + '00');   // bas du voile : transparent
         ctx.fillStyle = g;
         // Voile pleine largeur de la colonne du tournoi, du haut jusqu'à la limite des payés
         ctx.fillRect(cx - topW / 2, Math.min(top, bottom), topW, Math.abs(bottom - top));
-        // Trait doré continu, le plus fin possible (1 pixel physique de l'écran) à la limite des places payées
+        // Trait argent continu, le plus fin possible (1 pixel physique de l'écran) à la limite des places payées
         const hy = (Math.round(bottom * dpr) + 0.5) / dpr;
         ctx.strokeStyle = opts.color; ctx.lineWidth = 1 / dpr;
         ctx.beginPath(); ctx.moveTo(cx - topW / 2, hy); ctx.lineTo(cx + topW / 2, hy); ctx.stroke();
@@ -1965,6 +2010,59 @@
     { label: 'Deep', sub: '25k – 50k', test: n => n >= 25000 && n < 50000 },
     { label: 'Très deep', sub: '≥ 50k', test: n => n >= 50000 }
   ];
+  // ---------- Par tournoi (nom) : sur quels tournois je suis le meilleur ----------
+  // Classement par place moyenne (top %) ; seuls les noms joués au moins 2 fois sont classés
+  // (un seul résultat chanceux ne doit pas passer devant). Tournois sans nom ignorés.
+  const NAMES_MIN = 2, NAMES_SHOWN = 3;
+  let namesAll = false;                       // « Voir tout » (non mémorisé)
+  function renderNames(list) {
+    const map = new Map();
+    list.forEach(t => {
+      const k = nameKey(t);
+      if (!k) return;
+      const e = map.get(k) || { name: (t.name || '').trim(), items: [], platforms: new Set() };
+      e.items.push(t); e.platforms.add(t.platform);
+      map.set(k, e);
+    });
+    const unnamed = list.filter(t => !nameKey(t)).length;
+    const all = [...map.values()].map(e => Object.assign(e, { s: periodStats(e.items) }));
+    const byAvg = (a, b) => a.s.avg - b.s.avg || b.s.count - a.s.count || a.name.localeCompare(b.name, 'fr');
+    let ranked = all.filter(e => e.s.count >= NAMES_MIN).sort(byAvg);
+    let rest = all.filter(e => e.s.count < NAMES_MIN).sort(byAvg);   // joués 1 fois : affichés après, en gris, sans rang
+    const onlyOnce = !ranked.length && rest.length > 0;      // que des noms joués 1 fois : on les classe quand même
+    if (onlyOnce) { ranked = rest; rest = []; }
+    const once = rest.length;
+    const rows = ranked.concat(rest);
+    $('names-count').textContent = all.length ? `${all.length} nom${all.length > 1 ? 's' : ''}` : '';
+    const eur = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + fmtEur(Math.abs(v) >= 100 ? Math.round(Math.abs(v)) : Math.abs(v));
+    const shown = namesAll ? rows : rows.slice(0, NAMES_SHOWN);
+    $('names-table').innerHTML = shown.map((e, i) => {
+      const s = e.s, best = i === 0 && ranked.length > 1, off = i >= ranked.length;
+      return `<div class="nt-row${best ? ' nt-best' : ''}${off ? ' nt-off' : ''}">
+        <div class="nt-rank">${best ? '★' : off ? '·' : i + 1}</div>
+        <div class="nt-main">
+          <div class="nt-name">${[...e.platforms].map(p => `<span class="dot" style="background:${color(p)}"></span>`).join('')}<span>${esc(e.name)}</span></div>
+          <div class="nt-sub">${s.count} tournoi${s.count > 1 ? 's' : ''} · ITM <b>${s.itm != null ? Math.round(s.itm) + ' %' : '–'}</b> · <b class="${eurCls(s.net)}">${eur(s.net)}</b></div>
+        </div>
+        <div class="nt-big"><small>Top</small>${fmtPct(s.avg)}</div>
+      </div>`;
+    }).join('');
+    const more = rows.length > NAMES_SHOWN;
+    $('names-more').hidden = !more;
+    $('names-more').textContent = namesAll ? 'Voir moins' : `Voir les ${rows.length}`;
+    const notes = [];
+    if (!list.length) notes.push('Ajoute des tournois pour voir sur lesquels tu es le meilleur.');
+    else if (!all.length) notes.push('Donne un nom à tes tournois (crayon) pour comparer tes résultats par tournoi.');
+    else {
+      notes.push('Classé par place moyenne (top %)' + (ranked.length > 1 ? ' · ★ = ton meilleur tournoi' : ''));
+      if (onlyOnce) notes.push('chaque nom n\'est joué qu\'une fois pour l\'instant');
+      else if (once) notes.push(`en gris : joué${once > 1 ? 's' : ''} 1 seule fois, pas encore classé${once > 1 ? 's' : ''}`);
+      if (unnamed) notes.push(`${unnamed} sans nom`);
+    }
+    $('names-hint').textContent = notes.join(' · ');
+  }
+  $('names-more').addEventListener('click', () => { namesAll = !namesAll; render(true); });
+
   function renderStacks(list) {
     const withStack = list.filter(t => t.stack >= 1);
     $('stack-count').textContent = withStack.length ? `${withStack.length} avec stack` : '';
@@ -2085,7 +2183,7 @@
       const byKey = Object.fromEntries(cardEls().map(c => [c.dataset.key, c]));
       const keys = order.filter(k => byKey[k]);
       // Nouvelle carte absente de l'ordre enregistré : on l'insère à sa place par défaut
-      const DEFAULT = ['kpi', 'compare', 'progression', 'bilan', 'field', 'stack', 'depth', 'dist', 'series'];
+      const DEFAULT = ['kpi', 'compare', 'progression', 'bilan', 'field', 'names', 'stack', 'depth', 'dist', 'series'];
       Object.keys(byKey).filter(k => !keys.includes(k)).forEach(k => {
         const prev = DEFAULT.slice(0, DEFAULT.indexOf(k)).reverse().find(p => keys.includes(p));
         keys.splice(prev ? keys.indexOf(prev) + 1 : 0, 0, k);
@@ -2219,6 +2317,7 @@
     progression: ['Progression', 'Graphique des places'],
     bilan: ['Bilan cumulé', 'Bilan, gains, buy-ins et courbe de ton argent'],
     field: ['Par taille de field', 'Petits, moyens, gros tournois'],
+    names: ['Par tournoi', 'Tes meilleurs tournois (par nom)'],
     dist: ['Répartition des places', 'Histogramme par tranche'],
     stack: ['Par stack de départ', 'Résultats selon le stack'],
     depth: ['Places payées', 'Profondeur dans l\'argent et taux de bulle'],
@@ -2370,7 +2469,7 @@
   $('p-order').addEventListener('click', () => {
     ui.cardOrder = null; saveUI();
     const wrap = $('wrap');
-    ['kpi', 'compare', 'progression', 'bilan', 'field', 'stack', 'depth', 'dist', 'series'].forEach(k => {
+    ['kpi', 'compare', 'progression', 'bilan', 'field', 'names', 'stack', 'depth', 'dist', 'series'].forEach(k => {
       const c = document.querySelector(`#wrap > .card[data-key="${k}"]`);
       if (c) wrap.appendChild(c);
     });
@@ -2435,6 +2534,8 @@
     return { start: end - count + 1, end, count, total };
   }
   function updateZoomBar(w) {
+    // « 12 derniers » : seulement quand la vue n'est plus celle par défaut (zoom ou défilement)
+    $('view-reset').hidden = !w.total || (ui.view.count == null && ui.view.end == null);
     const show = w.total > MIN_VISIBLE;
     $('zoom-bar').hidden = !show;
     const r = $('z-range');
@@ -2460,6 +2561,12 @@
   }
   function currentWindow() { return computeWindow(periodList(lastChartList)); }
 
+  $('view-reset').addEventListener('click', e => {
+    e.stopPropagation();
+    ui.view = { count: null, end: null };
+    saveUI();
+    renderChart(lastChartList);
+  });
   $('z-in').addEventListener('click', () => { const w = currentWindow(); const c = Math.max(MIN_VISIBLE, Math.round(w.count / 1.6)); setView(c, w.end - Math.round((w.count - c) / 2)); });
   $('z-out').addEventListener('click', () => { const w = currentWindow(); const c = Math.round(w.count * 1.6); setView(c, w.end + Math.round((c - w.count) / 2)); });
   $('z-range').addEventListener('input', e => { const w = currentWindow(); setView(w.count, +e.target.value, true); });
